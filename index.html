@@ -444,12 +444,16 @@
     /* ── Cursor ── */
     const dot = document.createElement('div'); dot.id='cursor-dot';
     const ring = document.createElement('div'); ring.id='cursor-ring';
-    document.body.append(dot,ring);
+    const isTouch = window.matchMedia('(hover: none)').matches;
+    if (!isTouch) {
+      document.body.append(dot, ring);
+      let mx=-100,my=-100,rx=-100,ry=-100;
+      window.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;});
+      document.addEventListener('mouseover',e=>{if(e.target.closest('a,button,.btn,.service-card,.portfolio-card')) ring.classList.add('hovered');});
+      document.addEventListener('mouseout',e=>{if(e.target.closest('a,button,.btn,.service-card,.portfolio-card')) ring.classList.remove('hovered');});
+      document.addEventListener('mousedown',()=>{dot.style.transform='translate(-50%,-50%) scale(2.2)'; setTimeout(()=>dot.style.transform='translate(-50%,-50%)',200);});
+    }
     let mx=-100,my=-100,rx=-100,ry=-100;
-    window.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;});
-    document.addEventListener('mouseover',e=>{if(e.target.closest('a,button,.btn,.service-card,.portfolio-card')) ring.classList.add('hovered');});
-    document.addEventListener('mouseout',e=>{if(e.target.closest('a,button,.btn,.service-card,.portfolio-card')) ring.classList.remove('hovered');});
-    document.addEventListener('mousedown',()=>{dot.style.transform='translate(-50%,-50%) scale(2.2)'; setTimeout(()=>dot.style.transform='translate(-50%,-50%)',200);});
 
     /* ── Particles ── */
     const particles=[], trails=[], sparkles=[], inputSparks=[];
@@ -490,9 +494,8 @@
       requestAnimationFrame(fxLoop);
       if(now-lastTime<FRAME_MS) return;
       lastTime=now-(now-lastTime)%FRAME_MS;
-      rx+=(mx-rx)*.15; ry+=(my-ry)*.15;
-      dot.style.left=mx+'px'; dot.style.top=my+'px';
-      ring.style.left=rx+'px'; ring.style.top=ry+'px';
+      if(!isTouch){ rx+=(mx-rx)*.15; ry+=(my-ry)*.15; dot.style.left=mx+'px'; dot.style.top=my+'px';
+      ring.style.left=rx+'px'; ring.style.top=ry+'px'; }
       fx.clearRect(0,0,fxCanvas.width,fxCanvas.height);
       tickArr(particles); drawArr(particles,'#7eb8d4');
       tickArr(trails);    drawArr(trails,'#7eb8d4');
