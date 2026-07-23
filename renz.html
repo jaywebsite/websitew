@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <meta name="mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <title>HYDROSPARK 3D</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --blue:#1a3a6b; --blue2:#2a6bbf; --blue3:#4db8ff;
+      --dark:#080f1e; --panel:rgba(8,15,30,0.88);
+      --border:rgba(77,184,255,0.22); --text:#c8deff; --accent:#4db8ff;
+      --radius:12px; --tb-h:52px;
+    }
+    *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+    html, body { width:100%; height:100%; overflow:hidden; touch-action:none; }
+    body { background:var(--dark); font-family:'Inter',sans-serif; color:var(--text); }
+    #canvas-container { position:fixed; inset:0; }
+    canvas { display:block; touch-action:none; }
+
+    /* ── TITLE BAR ── */
+    #titlebar {
+      position:fixed; top:0; left:0; right:0; z-index:100;
+      height:var(--tb-h);
+      background:linear-gradient(90deg,rgba(8,15,30,0.97),rgba(13,34,68,0.93));
+      border-bottom:1px solid var(--border);
+      display:flex; align-items:center; gap:12px; padding:0 14px;
+      backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
+    }
+    .logo-wrap {
+      width:34px; height:34px; flex-shrink:0; border-radius:9px;
+      background:linear-gradient(135deg,#1a6bbf,#0d3a8f);
+      border:1px solid var(--blue3); display:flex; align-items:center;
+      justify-content:center; font-size:17px; box-shadow:0 0 10px #4db8ff44;
+    }
+    .title-text { min-width:0; }
+    .title-text h1 { font-size:15px; font-weight:700; letter-spacing:2px; color:#fff; white-space:nowrap; }
+    .title-text h1 span { color:var(--blue3); }
+    .title-text p  { font-size:9.5px; color:#6a8aaa; font-weight:300; white-space:nowrap;
+                     overflow:hidden; text-overflow:ellipsis; }
+    .title-sep { flex:1; min-width:0; }
+
+    /* ── TOOLBAR (desktop) ── */
+    .toolbar { display:flex; gap:6px; align-items:center; flex-shrink:0; }
+    .tb-btn {
+      display:flex; align-items:center; gap:5px;
+      padding:5px 11px; border-radius:7px; border:1px solid var(--border);
+      background:rgba(77,184,255,0.06); color:var(--text);
+      font-size:11px; font-weight:500; cursor:pointer;
+      transition:all 0.18s; font-family:'Inter',sans-serif;
+      white-space:nowrap; -webkit-tap-highlight-color:transparent;
+      min-height:34px; touch-action:manipulation;
+    }
+    .tb-btn:hover, .tb-btn:active { background:rgba(77,184,255,0.18); border-color:var(--blue3); color:#fff; }
+    .tb-btn.active { background:linear-gradient(135deg,#1a5bbf,#0d3a8f); border-color:var(--blue3); color:#fff; box-shadow:0 0 12px #4db8ff44; }
+    .tb-btn svg { width:13px; height:13px; flex-shrink:0; }
+    .tb-label { display:inline; }
+
+    /* ── MOBILE FAB BAR (bottom fixed) ── */
+    #fab-bar {
+      display:none;
+      position:fixed; bottom:0; left:0; right:0; z-index:100;
+      background:rgba(8,15,30,0.95); border-top:1px solid var(--border);
+      backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
+      padding:8px 12px calc(8px + env(safe-area-inset-bottom));
+      gap:8px;
+    }
+    .fab-btn {
+      flex:1; display:flex; flex-direction:column; align-items:center; gap:3px;
+      padding:8px 4px; border-radius:10px; border:1px solid var(--border);
+      background:rgba(77,184,255,0.06); color:var(--text);
+      font-size:9px; font-weight:500; cursor:pointer;
+      transition:all 0.18s; -webkit-tap-highlight-color:transparent;
+      touch-action:manipulation;
+    }
+    .fab-btn:active { background:rgba(77,184,255,0.22); }
+    .fab-btn.active { background:linear-gradient(135deg,#1a5bbf,#0d3a8f); border-color:var(--blue3); color:#fff; }
+    .fab-btn svg { width:18px; height:18px; }
+
+    /* ── LEFT PANEL ── */
+    #left-panel {
+      position:fixed; top:calc(var(--tb-h) + 10px); left:12px; z-index:90;
+      width:220px;
+      background:var(--panel); border:1px solid var(--border);
+      border-radius:var(--radius); padding:12px;
+      backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px);
+      box-shadow:0 8px 32px rgba(0,0,0,0.45);
+      transition:transform 0.35s cubic-bezier(0.4,0,0.2,1), opacity 0.35s;
+      max-height:calc(100vh - var(--tb-h) - 24px); overflow-y:auto;
+    }
+    #left-panel::-webkit-scrollbar { width:3px; }
+    #left-panel::-webkit-scrollbar-track { background:transparent; }
+    #left-panel::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
+
+    .panel-title {
+      font-size:9.5px; font-weight:600; letter-spacing:1.4px;
+      color:var(--blue3); text-transform:uppercase; margin-bottom:10px;
+      display:flex; align-items:center; gap:6px;
+    }
+    .panel-title::after { content:''; flex:1; height:1px; background:var(--border); }
+
+    .comp-item {
+      display:flex; align-items:center; gap:9px;
+      padding:7px 7px; border-radius:8px; cursor:pointer;
+      transition:all 0.18s; margin-bottom:2px; border:1px solid transparent;
+      -webkit-tap-highlight-color:transparent; touch-action:manipulation;
+    }
+    .comp-item:hover, .comp-item:active { background:rgba(77,184,255,0.1); border-color:var(--border); }
+    .comp-item.active { background:rgba(77,184,255,0.14); border-color:rgba(77,184,255,0.38); }
+    .comp-num {
+      width:21px; height:21px; border-radius:6px; flex-shrink:0;
+      display:flex; align-items:center; justify-content:center;
+      font-size:9.5px; font-weight:700; color:#fff;
+    }
+    .comp-text strong { font-size:10.5px; font-weight:600; color:#d0e8ff; display:block; }
+    .comp-text span   { font-size:9.5px; color:#7a9acc; font-weight:300; line-height:1.3; }
+
+    /* ── RIGHT PANEL ── */
+    #right-panel {
+      position:fixed; top:calc(var(--tb-h) + 10px); right:12px; z-index:90;
+      width:200px;
+      background:var(--panel); border:1px solid var(--border);
+      border-radius:var(--radius); padding:12px;
+      backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px);
+      box-shadow:0 8px 32px rgba(0,0,0,0.45);
+      transition:transform 0.35s cubic-bezier(0.4,0,0.2,1), opacity 0.35s;
+    }
+    .stat-row { display:flex; align-items:center; justify-content:space-between; margin-bottom:9px; gap:5px; }
+    .stat-label { font-size:9.5px; color:#7a9acc; font-weight:400; flex-shrink:0; width:60px; }
+    .stat-bar { flex:1; height:4px; background:rgba(77,184,255,0.1); border-radius:2px; overflow:hidden; }
+    .stat-fill { height:100%; border-radius:2px; transition:width 1.5s cubic-bezier(0.4,0,0.2,1); }
+    .stat-val  { font-size:9.5px; font-weight:600; color:var(--blue3); min-width:38px; text-align:right; }
+    .status-dot { width:7px; height:7px; border-radius:50%; background:#44ff88; box-shadow:0 0 6px #44ff88; animation:blink 2s infinite; }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.35} }
+    .status-row { display:flex; align-items:center; gap:7px; margin-top:9px; padding-top:9px; border-top:1px solid var(--border); }
+    .status-text { font-size:9.5px; color:#44ff88; }
+
+    /* ── BOTTOM HINT (desktop) ── */
+    #bottom-bar {
+      position:fixed; bottom:14px; left:50%; transform:translateX(-50%);
+      z-index:90; display:flex; align-items:center; gap:6px;
+      background:var(--panel); border:1px solid var(--border);
+      border-radius:40px; padding:5px 14px;
+      backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
+      font-size:10.5px; color:#6a8aaa; white-space:nowrap;
+    }
+    #bottom-bar b { color:var(--blue3); font-weight:500; }
+
+    /* ── MOBILE BOTTOM SHEET ── */
+    #sheet-backdrop {
+      display:none; position:fixed; inset:0; z-index:150;
+      background:rgba(0,0,0,0.55); backdrop-filter:blur(4px);
+      -webkit-backdrop-filter:blur(4px);
+    }
+    #bottom-sheet {
+      position:fixed; left:0; right:0; bottom:0; z-index:160;
+      background:rgba(8,15,30,0.97); border-top:1px solid var(--border);
+      border-radius:18px 18px 0 0;
+      padding:0 16px calc(20px + env(safe-area-inset-bottom));
+      transform:translateY(100%);
+      transition:transform 0.38s cubic-bezier(0.4,0,0.2,1);
+      max-height:80vh; overflow-y:auto;
+    }
+    #bottom-sheet.open { transform:translateY(0); }
+    .sheet-handle {
+      width:36px; height:4px; border-radius:2px; background:var(--border);
+      margin:10px auto 14px;
+    }
+    .sheet-tabs { display:flex; gap:6px; margin-bottom:14px; }
+    .sheet-tab {
+      flex:1; padding:7px; border-radius:8px; border:1px solid var(--border);
+      background:transparent; color:var(--text); font-size:11px; font-weight:500;
+      cursor:pointer; text-align:center; font-family:'Inter',sans-serif;
+      -webkit-tap-highlight-color:transparent; touch-action:manipulation;
+    }
+    .sheet-tab.active { background:rgba(77,184,255,0.15); border-color:var(--blue3); color:var(--blue3); }
+    .sheet-pane { display:none; }
+    .sheet-pane.active { display:block; }
+
+    /* ── EXPLODE LABELS ── */
+    #label-overlay { position:fixed; inset:0; pointer-events:none; z-index:80; }
+    .exp-label {
+      position:absolute; pointer-events:none;
+      background:rgba(8,15,30,0.92); border:1px solid var(--blue3);
+      border-radius:6px; padding:4px 9px;
+      font-size:10px; font-weight:600; color:var(--blue3);
+      white-space:nowrap; opacity:0;
+      transition:opacity 0.4s;
+      transform:translate(-50%,-50%);
+      box-shadow:0 0 10px #4db8ff30;
+    }
+    body.exploded .exp-label { opacity:1; }
+
+    /* ── GLOW ANIM ── */
+    #explode-btn.active, #fab-explode.active {
+      animation:glowPulse 2.2s infinite;
+    }
+    @keyframes glowPulse {
+      0%,100%{ box-shadow:0 0 10px #4db8ff33; }
+      50%    { box-shadow:0 0 22px #4db8ffaa; }
+    }
+
+    /* ── PANEL TOGGLE BUTTON (mobile) ── */
+    #panel-toggle {
+      display:none; position:fixed; top:calc(var(--tb-h) + 8px); left:10px; z-index:95;
+      width:36px; height:36px; border-radius:10px;
+      background:var(--panel); border:1px solid var(--border);
+      align-items:center; justify-content:center; cursor:pointer;
+      backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
+      -webkit-tap-highlight-color:transparent; touch-action:manipulation;
+    }
+    #panel-toggle svg { width:18px; height:18px; color:var(--blue3); }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 768px) {
+      .toolbar   { display:none; }
+      .title-sep { display:none; }
+      .title-text p { display:none; }
+      .title-text h1 { font-size:14px; letter-spacing:1.5px; }
+      #left-panel {
+        top:calc(var(--tb-h) + 52px); left:0; right:0; width:100%;
+        border-radius:0; border-left:none; border-right:none;
+        transform:translateY(-110%); opacity:0;
+        max-height:50vh; pointer-events:none;
+      }
+      #left-panel.mobile-open { transform:translateY(0); opacity:1; pointer-events:all; }
+      #right-panel { display:none; }
+      #bottom-bar  { display:none; }
+      #fab-bar     { display:flex; }
+      #panel-toggle { display:flex; }
+      .tb-label { display:none; }
+    }
+    @media (max-width: 480px) {
+      #titlebar { padding:0 10px; gap:8px; }
+      .logo-wrap { width:30px; height:30px; font-size:15px; }
+      .title-text h1 { font-size:13px; letter-spacing:1px; }
+    }
+    /* Wide desktop: hide panel-toggle */
+    @media (min-width: 769px) {
+      #panel-toggle { display:none !important; }
+    }
+  </style>
+</head>
+<body>
+<div id="canvas-container"></div>
+<div id="label-overlay"></div>
+
+<!-- ── TITLE BAR ── -->
+<div id="titlebar">
+  <div class="logo-wrap">💧</div>
+  <div class="title-text">
+    <h1>HYDRO<span>SPARK</span></h1>
+    <p>Smart Rainwater Microhydro Charger · SJC Rosario Batangas</p>
+  </div>
+  <div class="title-sep"></div>
+  <div class="toolbar">
+    <button class="tb-btn" id="reset-btn" onclick="resetCamera()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+      <span class="tb-label">Reset</span>
+    </button>
+    <button class="tb-btn" id="explode-btn" onclick="toggleExplode()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M2 12h3M19 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/></svg>
+      <span class="tb-label">Explode</span>
+    </button>
+    <button class="tb-btn" id="anim-btn" onclick="toggleAnimation()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+      <span class="tb-label">Pause</span>
+    </button>
+    <button class="tb-btn" id="wire-btn" onclick="toggleWireframe()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>
+      <span class="tb-label">Wireframe</span>
+    </button>
+  </div>
+</div>
+
+<!-- ── PANEL TOGGLE (mobile) ── -->
+<div id="panel-toggle" onclick="toggleMobilePanel()">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+</div>
+
+<!-- ── LEFT PANEL (desktop) / slide-down (mobile) ── -->
+<div id="left-panel">
+  <div class="panel-title">⚙ Components</div>
+  <div class="comp-item" onclick="focusComponent('roof',this)">
+    <div class="comp-num" style="background:#1a6bbf">1</div>
+    <div class="comp-text"><strong>Rainwater Collection</strong><span>Solar roof + gutters</span></div>
+  </div>
+  <div class="comp-item" onclick="focusComponent('filter',this)">
+    <div class="comp-num" style="background:#0d8a6b">2</div>
+    <div class="comp-text"><strong>Filtration System</strong><span>Clear housing, mesh filter</span></div>
+  </div>
+  <div class="comp-item" onclick="focusComponent('pipes',this)">
+    <div class="comp-num" style="background:#5566aa">3</div>
+    <div class="comp-text"><strong>PVC Pipe Network</strong><span>Elbows, T-joints, flow</span></div>
+  </div>
+  <div class="comp-item" onclick="focusComponent('turbine',this)">
+    <div class="comp-num" style="background:#1a4a8f">4</div>
+    <div class="comp-text"><strong>Microhydro Turbine</strong><span>10-blade impeller, generator</span></div>
+  </div>
+  <div class="comp-item" onclick="focusComponent('control',this)">
+    <div class="comp-num" style="background:#446688">5</div>
+    <div class="comp-text"><strong>Smart Control Unit</strong><span>LCD, LEDs, monitoring</span></div>
+  </div>
+  <div class="comp-item" onclick="focusComponent('battery',this)">
+    <div class="comp-num" style="background:#886622">6</div>
+    <div class="comp-text"><strong>Energy Storage</strong><span>12V battery, terminals</span></div>
+  </div>
+  <div class="comp-item" onclick="focusComponent('output',this)">
+    <div class="comp-num" style="background:#226644">7</div>
+    <div class="comp-text"><strong>Smart Output</strong><span>5V USB charging ports</span></div>
+  </div>
+</div>
+
+<!-- ── RIGHT PANEL (desktop) ── -->
+<div id="right-panel">
+  <div class="panel-title">📊 Live Status</div>
+  <div class="stat-row">
+    <span class="stat-label">Water Flow</span>
+    <div class="stat-bar"><div class="stat-fill" id="s1" style="width:72%;background:linear-gradient(90deg,#1a6bbf,#4db8ff)"></div></div>
+    <span class="stat-val" id="sv1">2.4 L/s</span>
+  </div>
+  <div class="stat-row">
+    <span class="stat-label">Power Out</span>
+    <div class="stat-bar"><div class="stat-fill" id="s2" style="width:58%;background:linear-gradient(90deg,#0d7a44,#44ee88)"></div></div>
+    <span class="stat-val" id="sv2">14.2 W</span>
+  </div>
+  <div class="stat-row">
+    <span class="stat-label">Battery</span>
+    <div class="stat-bar"><div class="stat-fill" id="s3" style="width:83%;background:linear-gradient(90deg,#886600,#ffcc00)"></div></div>
+    <span class="stat-val" id="sv3">83%</span>
+  </div>
+  <div class="stat-row">
+    <span class="stat-label">RPM</span>
+    <div class="stat-bar"><div class="stat-fill" id="s4" style="width:65%;background:linear-gradient(90deg,#882200,#ff8844)"></div></div>
+    <span class="stat-val" id="sv4">420</span>
+  </div>
+  <div class="stat-row">
+    <span class="stat-label">Efficiency</span>
+    <div class="stat-bar"><div class="stat-fill" id="s5" style="width:78%;background:linear-gradient(90deg,#441a88,#aa44ff)"></div></div>
+    <span class="stat-val" id="sv5">78%</span>
+  </div>
+  <div class="status-row">
+    <div class="status-dot"></div>
+    <span class="status-text">System Online</span>
+  </div>
+</div>
+
+<!-- ── BOTTOM HINT (desktop) ── -->
+<div id="bottom-bar">
+  <b>Drag</b> rotate &nbsp;·&nbsp; <b>Scroll</b> zoom &nbsp;·&nbsp; <b>Right-drag</b> pan &nbsp;·&nbsp; Click panel to focus
+</div>
+
+<!-- ── FAB BAR (mobile only) ── -->
+<div id="fab-bar">
+  <button class="fab-btn" id="fab-explode" onclick="toggleExplode()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M2 12h3M19 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/></svg>
+    Explode
+  </button>
+  <button class="fab-btn" id="fab-anim" onclick="toggleAnimation()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+    Pause
+  </button>
+  <button class="fab-btn" id="fab-wire" onclick="toggleWireframe()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>
+    Wireframe
+  </button>
+  <button class="fab-btn" onclick="resetCamera()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+    Reset
+  </button>
+  <button class="fab-btn" onclick="openSheet('stats')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+    Stats
+  </button>
+</div>
+
+<!-- ── MOBILE BOTTOM SHEET ── -->
+<div id="sheet-backdrop" onclick="closeSheet()"></div>
+<div id="bottom-sheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-tabs">
+    <button class="sheet-tab active" onclick="switchTab('stats',this)">📊 Status</button>
+    <button class="sheet-tab" onclick="switchTab('info',this)">⚙ Parts</button>
+  </div>
+  <div id="pane-stats" class="sheet-pane active">
+    <div class="stat-row" style="margin-bottom:12px">
+      <span class="stat-label">Water Flow</span>
+      <div class="stat-bar"><div class="stat-fill" id="ms1" style="width:72%;background:linear-gradient(90deg,#1a6bbf,#4db8ff)"></div></div>
+      <span class="stat-val" id="msv1">2.4 L/s</span>
+    </div>
+    <div class="stat-row" style="margin-bottom:12px">
+      <span class="stat-label">Power Out</span>
+      <div class="stat-bar"><div class="stat-fill" id="ms2" style="width:58%;background:linear-gradient(90deg,#0d7a44,#44ee88)"></div></div>
+      <span class="stat-val" id="msv2">14.2 W</span>
+    </div>
+    <div class="stat-row" style="margin-bottom:12px">
+      <span class="stat-label">Battery</span>
+      <div class="stat-bar"><div class="stat-fill" id="ms3" style="width:83%;background:linear-gradient(90deg,#886600,#ffcc00)"></div></div>
+      <span class="stat-val" id="msv3">83%</span>
+    </div>
+    <div class="stat-row" style="margin-bottom:12px">
+      <span class="stat-label">RPM</span>
+      <div class="stat-bar"><div class="stat-fill" id="ms4" style="width:65%;background:linear-gradient(90deg,#882200,#ff8844)"></div></div>
+      <span class="stat-val" id="msv4">420</span>
+    </div>
+    <div class="stat-row" style="margin-bottom:4px">
+      <span class="stat-label">Efficiency</span>
+      <div class="stat-bar"><div class="stat-fill" id="ms5" style="width:78%;background:linear-gradient(90deg,#441a88,#aa44ff)"></div></div>
+      <span class="stat-val" id="msv5">78%</span>
+    </div>
+    <div class="status-row"><div class="status-dot"></div><span class="status-text">System Online</span></div>
+  </div>
+  <div id="pane-info" class="sheet-pane">
+    <div class="comp-item" onclick="focusComponent('roof',this);closeSheet()"><div class="comp-num" style="background:#1a6bbf">1</div><div class="comp-text"><strong>Rainwater Collection</strong><span>Solar roof + gutters</span></div></div>
+    <div class="comp-item" onclick="focusComponent('filter',this);closeSheet()"><div class="comp-num" style="background:#0d8a6b">2</div><div class="comp-text"><strong>Filtration System</strong><span>Clear housing, mesh filter</span></div></div>
+    <div class="comp-item" onclick="focusComponent('pipes',this);closeSheet()"><div class="comp-num" style="background:#5566aa">3</div><div class="comp-text"><strong>PVC Pipe Network</strong><span>Elbows, T-joints, flow</span></div></div>
+    <div class="comp-item" onclick="focusComponent('turbine',this);closeSheet()"><div class="comp-num" style="background:#1a4a8f">4</div><div class="comp-text"><strong>Microhydro Turbine</strong><span>10-blade impeller, generator</span></div></div>
+    <div class="comp-item" onclick="focusComponent('control',this);closeSheet()"><div class="comp-num" style="background:#446688">5</div><div class="comp-text"><strong>Smart Control Unit</strong><span>LCD, LEDs, monitoring</span></div></div>
+    <div class="comp-item" onclick="focusComponent('battery',this);closeSheet()"><div class="comp-num" style="background:#886622">6</div><div class="comp-text"><strong>Energy Storage</strong><span>12V battery, terminals</span></div></div>
+    <div class="comp-item" onclick="focusComponent('output',this);closeSheet()"><div class="comp-num" style="background:#226644">7</div><div class="comp-text"><strong>Smart Output</strong><span>5V USB charging ports</span></div></div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="hydrospark-model.js"></script>
+<script>
+// ── Mobile panel toggle ──
+function toggleMobilePanel() {
+  document.getElementById('left-panel').classList.toggle('mobile-open');
+}
+
+// ── Sheet open/close/tabs ──
+function openSheet(tab) {
+  document.getElementById('sheet-backdrop').style.display = 'block';
+  document.getElementById('bottom-sheet').classList.add('open');
+  if (tab) switchTab(tab, document.querySelector('.sheet-tab'));
+}
+function closeSheet() {
+  document.getElementById('sheet-backdrop').style.display = 'none';
+  document.getElementById('bottom-sheet').classList.remove('open');
+}
+function switchTab(id, el) {
+  document.querySelectorAll('.sheet-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.sheet-pane').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('pane-'+id).classList.add('active');
+}
+
+// Swipe-down to close sheet
+(function(){
+  const sheet = document.getElementById('bottom-sheet');
+  let startY = 0, dragging = false;
+  sheet.addEventListener('touchstart', e => { startY = e.touches[0].clientY; dragging = true; }, {passive:true});
+  sheet.addEventListener('touchmove', e => {
+    if (!dragging) return;
+    const dy = e.touches[0].clientY - startY;
+    if (dy > 0) sheet.style.transform = `translateY(${dy}px)`;
+  }, {passive:true});
+  sheet.addEventListener('touchend', e => {
+    dragging = false;
+    const dy = e.changedTouches[0].clientY - startY;
+    sheet.style.transform = '';
+    if (dy > 80) closeSheet();
+  }, {passive:true});
+})();
+
+// ── Stats animation (sync desktop + mobile) ──
+function animateStats() {
+  const flow  = (2.1 + Math.random()*0.7).toFixed(1);
+  const power = (12  + Math.random()*5).toFixed(1);
+  const bat   = Math.min(100, Math.max(60, 83 + (Math.random()-0.5)*4)).toFixed(0);
+  const rpm   = Math.round(380 + Math.random()*90);
+  const eff   = Math.round(74 + Math.random()*8);
+  const sets = [
+    ['sv1','s1','msv1','ms1', flow+' L/s',   (parseFloat(flow)/4*100)+'%'],
+    ['sv2','s2','msv2','ms2', power+' W',     (parseFloat(power)/25*100)+'%'],
+    ['sv3','s3','msv3','ms3', bat+'%',         bat+'%'],
+    ['sv4','s4','msv4','ms4', rpm+'',          (rpm/650*100)+'%'],
+    ['sv5','s5','msv5','ms5', eff+'%',         eff+'%'],
+  ];
+  sets.forEach(([vid,bid,mvid,mbid,val,w]) => {
+    const v=document.getElementById(vid), b=document.getElementById(bid);
+    const mv=document.getElementById(mvid), mb=document.getElementById(mbid);
+    if(v) v.textContent=val;
+    if(b) b.style.width=w;
+    if(mv) mv.textContent=val;
+    if(mb) mb.style.width=w;
+  });
+}
+setInterval(animateStats, 2200);
+
+// ── Sync FAB button states with desktop buttons ──
+function syncFabState() {
+  const explodeActive = document.getElementById('explode-btn')?.classList.contains('active');
+  const animActive    = document.getElementById('anim-btn')?.classList.contains('active');
+  const wireActive    = document.getElementById('wire-btn')?.classList.contains('active');
+  document.getElementById('fab-explode')?.classList.toggle('active', !!explodeActive);
+  document.getElementById('fab-anim')   ?.classList.toggle('active', !!animActive);
+  document.getElementById('fab-wire')   ?.classList.toggle('active', !!wireActive);
+  // Update FAB text
+  const fe = document.getElementById('fab-explode');
+  if (fe) fe.childNodes[fe.childNodes.length-1].textContent = explodeActive ? ' Assemble' : ' Explode';
+  const fa = document.getElementById('fab-anim');
+  if (fa) fa.childNodes[fa.childNodes.length-1].textContent = animActive ? ' Play' : ' Pause';
+}
+
+// Patch toggleExplode and toggleAnimation to also sync FABs
+const _origToggleExplode    = window.toggleExplode;
+const _origToggleAnimation  = window.toggleAnimation;
+const _origToggleWireframe  = window.toggleWireframe;
+if (_origToggleExplode)   window.toggleExplode   = function(){ _origToggleExplode();   syncFabState(); };
+if (_origToggleAnimation) window.toggleAnimation = function(){ _origToggleAnimation(); syncFabState(); };
+if (_origToggleWireframe) window.toggleWireframe = function(){ _origToggleWireframe(); syncFabState(); };
+
+// Close panel when tapping canvas on mobile
+document.getElementById('canvas-container').addEventListener('touchstart', function() {
+  const p = document.getElementById('left-panel');
+  if (p.classList.contains('mobile-open')) p.classList.remove('mobile-open');
+}, {passive:true});
+</script>
+</body>
+</html>
