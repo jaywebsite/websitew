@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>FRESHBIN – 3D Viewer</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#111a11;font-family:'Segoe UI',sans-serif;color:#e0e0e0;overflow:hidden}
+#c{display:block;position:fixed;inset:0;width:100%;height:100%}
+#loader{position:fixed;inset:0;background:#111a11;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;z-index:999;transition:opacity .6s}
+#loader.gone{opacity:0;pointer-events:none}
+.ll{font-size:44px;font-weight:900;color:#7ec850;letter-spacing:3px;margin-bottom:10px}
+.ls{font-size:12px;color:#666;letter-spacing:2px;margin-bottom:28px}
+.lbw{width:240px;height:3px;background:#1e2e1e;border-radius:2px}
+.lb{height:3px;background:#7ec850;width:0%;border-radius:2px;transition:width .15s}
+.lt{font-size:11px;color:#7ec850;margin-top:10px;letter-spacing:1px}
+/* topbar */
+#tb{position:fixed;top:0;left:0;right:0;height:52px;background:rgba(10,20,10,.93);
+  border-bottom:1px solid #2a4a2a;display:flex;align-items:center;padding:0 16px;gap:10px;z-index:100}
+#tb .brand{font-size:18px;font-weight:800;color:#7ec850;letter-spacing:2px}
+#tb .sub{font-size:10px;color:#888;letter-spacing:1px}
+#tb .sp{flex:1}
+.vb{background:rgba(126,200,80,.12);border:1px solid #4a7a3a;color:#9ed870;
+  padding:6px 13px;border-radius:5px;cursor:pointer;font-size:11px;font-weight:600;
+  letter-spacing:.6px;transition:all .18s}
+.vb:hover,.vb.on{background:#7ec850;color:#111;border-color:#7ec850}
+/* bottom bar */
+#bb{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);
+  display:flex;gap:8px;z-index:100}
+.cb{background:rgba(10,25,10,.92);border:1px solid #2a5a2a;color:#b0d890;
+  padding:9px 16px;border-radius:7px;cursor:pointer;font-size:11px;font-weight:600;
+  letter-spacing:.4px;transition:all .18s;backdrop-filter:blur(4px)}
+.cb:hover{background:#7ec850;color:#111;border-color:#7ec850}
+.cb.on{background:#4a9a20;color:#fff;border-color:#4a9a20}
+/* explode slider */
+#es{position:fixed;bottom:62px;left:50%;transform:translateX(-50%);
+  background:rgba(10,25,10,.93);border:1px solid #2a5a2a;border-radius:8px;
+  padding:10px 18px;z-index:100;display:none;min-width:260px}
+#es.show{display:block}
+#es label{font-size:10px;color:#7ec850;font-weight:700;letter-spacing:1px;display:block;margin-bottom:7px}
+#esl{width:100%;accent-color:#7ec850}
+/* panels */
+#lp,#rp{position:fixed;top:52px;bottom:0;width:252px;background:rgba(8,18,8,.93);
+  border-color:#1e3a1e;overflow-y:auto;z-index:90;transition:transform .28s}
+#lp{left:0;border-right:1px solid #1e3a1e}
+#rp{right:0;border-left:1px solid #1e3a1e}
+#lp.h{transform:translateX(-252px)}
+#rp.h{transform:translateX(252px)}
+.ps{padding:13px;border-bottom:1px solid #1a2e1a}
+.pt{font-size:9px;font-weight:700;color:#7ec850;letter-spacing:2px;text-transform:uppercase;margin-bottom:10px}
+.pi{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:5px;
+  cursor:pointer;transition:background .18s;margin-bottom:3px}
+.pi:hover{background:rgba(126,200,80,.1)}
+.pi.on{background:rgba(126,200,80,.18);border:1px solid rgba(126,200,80,.25)}
+.pd{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.pn{font-size:11px;font-weight:500}
+.sr{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid #1a2e1a;font-size:11px}
+.sk{color:#777}.sv{color:#ddd;font-weight:600;text-align:right}
+.fc{background:rgba(126,200,80,.06);border:1px solid rgba(126,200,80,.15);
+  border-radius:6px;padding:10px;margin-bottom:8px}
+.fn{font-size:11px;font-weight:700;color:#c8e8a0;margin-bottom:3px}
+.fd{font-size:10px;color:#888;line-height:1.5}
+.fnum{font-size:18px;font-weight:800;color:#7ec850;float:right}
+/* toggle btns */
+#tl,#tr{position:fixed;top:60px;z-index:95;background:rgba(10,25,10,.85);
+  border:1px solid #2a5a2a;color:#7ec850;width:26px;height:26px;border-radius:4px;
+  cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center}
+#tl{left:3px}#tr{right:3px}
+/* tooltip */
+#tip{position:fixed;background:rgba(5,15,5,.96);border:1px solid #5a9a3a;
+  border-radius:7px;padding:9px 12px;font-size:11px;pointer-events:none;
+  display:none;z-index:200;max-width:190px;line-height:1.6}
+#tip .tn{color:#7ec850;font-weight:700;margin-bottom:3px}
+::-webkit-scrollbar{width:3px}
+::-webkit-scrollbar-thumb{background:#2a5a2a;border-radius:2px}
+</style>
+</head>
+<body>
+<div id="loader">
+  <div class="ll">🌿 FRESHBIN</div>
+  <div class="ls">PORTABLE ODOR-CONTROLLED COMPOST BIN</div>
+  <div class="lbw"><div class="lb" id="lb"></div></div>
+  <div class="lt" id="lt">Loading...</div>
+</div>
+<div id="tb">
+  <div class="brand">🌿 FRESHBIN</div>
+  <div class="sub">3D VIEWER</div>
+  <div class="sp"></div>
+  <button class="vb on" id="v3d" onclick="sv('3d')">3D</button>
+  <button class="vb" id="vfr" onclick="sv('front')">FRONT</button>
+  <button class="vb" id="vsi" onclick="sv('side')">SIDE</button>
+  <button class="vb" id="vto" onclick="sv('top')">TOP</button>
+  <button class="vb" id="vcu" onclick="sv('cut')">CUTAWAY</button>
+</div>
+<div id="tl" onclick="tp('lp')">☰</div>
+<div id="tr" onclick="tp('rp')">☰</div>
+<div id="lp">
+  <div class="ps"><div class="pt">Components</div><div id="pl"></div></div>
+  <div class="ps"><div class="pt">Visibility</div><div id="vl" style="display:flex;flex-direction:column;gap:6px"></div></div>
+</div>
+<div id="rp">
+  <div class="ps">
+    <div class="pt">Specifications</div>
+    <div class="sr"><span class="sk">Dimensions</span><span class="sv">48×30×30 cm</span></div>
+    <div class="sr"><span class="sk">Capacity</span><span class="sv">25–30 L</span></div>
+    <div class="sr"><span class="sk">Weight</span><span class="sv">~3.5–4 kg</span></div>
+    <div class="sr"><span class="sk">Material</span><span class="sv">PP Plastic (Matte)</span></div>
+    <div class="sr"><span class="sk">Color</span><span class="sv">Dark Olive Green</span></div>
+    <div class="sr"><span class="sk">Use</span><span class="sv">Indoor / Outdoor</span></div>
+  </div>
+  <div class="ps">
+    <div class="pt">Key Features</div>
+    <div class="fc"><div class="fnum">①</div><div class="fn">Airlock Waste Inlet</div><div class="fd">Dual-door sealed chamber prevents odor escape when adding waste.</div></div>
+    <div class="fc"><div class="fnum">②</div><div class="fn">Charcoal Filter Vent</div><div class="fd">All air exits through activated charcoal cartridge on top-right.</div></div>
+    <div class="fc"><div class="fnum">③</div><div class="fn">Manual Mixing Crank</div><div class="fd">Side handle rotates central shaft and blades to mix compost.</div></div>
+    <div class="fc"><div class="fnum">④</div><div class="fn">Perforated Aeration Shaft</div><div class="fd">Central metal cylinder with holes distributes oxygen through compost.</div></div>
+    <div class="fc"><div class="fnum">⑤</div><div class="fn">Side Air Intakes</div><div class="fd">Bottom-side louver vents allow passive fresh-air entry.</div></div>
+    <div class="fc"><div class="fnum">⑥</div><div class="fn">Mesh Platform</div><div class="fd">Separates compost solids from leachate liquid. Removable.</div></div>
+    <div class="fc"><div class="fnum">⑦</div><div class="fn">Drain Valve</div><div class="fd">Front-bottom nozzle drains collected leachate from tray.</div></div>
+  </div>
+  <div class="ps">
+    <div class="pt">How It Works</div>
+    <div style="font-size:10px;color:#888;line-height:1.9">
+      <div style="border-bottom:1px solid #1a2e1a;padding:3px 0"><span style="color:#7ec850;font-weight:700">1.</span> Open outer door → add organic waste</div>
+      <div style="border-bottom:1px solid #1a2e1a;padding:3px 0"><span style="color:#7ec850;font-weight:700">2.</span> Close outer door</div>
+      <div style="border-bottom:1px solid #1a2e1a;padding:3px 0"><span style="color:#7ec850;font-weight:700">3.</span> Turn crank → mix + aerate</div>
+      <div style="border-bottom:1px solid #1a2e1a;padding:3px 0"><span style="color:#7ec850;font-weight:700">4.</span> Inner door opens → waste enters chamber</div>
+      <div style="border-bottom:1px solid #1a2e1a;padding:3px 0"><span style="color:#7ec850;font-weight:700">5.</span> Air rises through compost</div>
+      <div style="padding:3px 0"><span style="color:#7ec850;font-weight:700">6.</span> Odors filtered through charcoal vent</div>
+    </div>
+  </div>
+</div>
+<canvas id="c"></canvas>
+<div id="tip"><div class="tn" id="ttn"></div><div id="ttd"></div></div>
+<div id="es"><label>EXPLODE FACTOR</label><input type="range" id="esl" min="0" max="100" value="0" oninput="setEx(this.value)"/></div>
+<div id="bb">
+  <button class="cb" onclick="resetCam()">⟳ RESET</button>
+  <button class="cb" id="bex" onclick="togEx()">💥 EXPLODE</button>
+  <button class="cb" id="bli" onclick="togLid()">📂 OPEN LID</button>
+  <button class="cb" id="bwf" onclick="togWF()">⬡ WIREFRAME</button>
+  <button class="cb" id="bar" onclick="togAR()">▶ AUTO ROTATE</button>
+  <button class="cb" onclick="togXR()">👁 X-RAY</button>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+'use strict';
+
+// ── RENDERER ────────────────────────────────────────────────────────
+const canvas = document.getElementById('c');
+const renderer = new THREE.WebGLRenderer({canvas, antialias:true});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.15;
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0e180e);
+scene.fog = new THREE.Fog(0x0e180e, 10, 30);
+
+const camera = new THREE.PerspectiveCamera(44, 1, 0.01, 80);
+camera.position.set(1.8, 1.3, 2.2);
+
+function onResize(){
+  const w=window.innerWidth, h=window.innerHeight;
+  renderer.setSize(w,h);
+  camera.aspect=w/h;
+  camera.updateProjectionMatrix();
+}
+window.addEventListener('resize', onResize);
+onResize();
+
+// ── LIGHTS ──────────────────────────────────────────────────────────
+scene.add(new THREE.AmbientLight(0xffffff, 0.45));
+const sun = new THREE.DirectionalLight(0xfff8e8, 1.1);
+sun.position.set(3,5,4); sun.castShadow=true;
+sun.shadow.mapSize.set(1024,1024);
+scene.add(sun);
+const fill = new THREE.DirectionalLight(0xaaffaa, 0.28);
+fill.position.set(-3,2,-3); scene.add(fill);
+const rim = new THREE.DirectionalLight(0x88cc88, 0.35);
+rim.position.set(0,-2,-4); scene.add(rim);
+
+const grid = new THREE.GridHelper(10,20,0x1e3a1e,0x141e14);
+grid.position.y = -0.88;
+scene.add(grid);
+
+// ── MATERIAL PALETTE ────────────────────────────────────────────────
+const M = {
+  body:   new THREE.MeshStandardMaterial({color:0x3d5a30,roughness:.84,metalness:.04}),
+  dark:   new THREE.MeshStandardMaterial({color:0x2a3d20,roughness:.88,metalness:.04}),
+  darker: new THREE.MeshStandardMaterial({color:0x1e2e16,roughness:.9, metalness:.03}),
+  handle: new THREE.MeshStandardMaterial({color:0x1e2816,roughness:.70,metalness:.10}),
+  metal:  new THREE.MeshStandardMaterial({color:0x8a9a8a,roughness:.40,metalness:.70}),
+  metald: new THREE.MeshStandardMaterial({color:0x2a3a2a,roughness:.50,metalness:.60}),
+  filter: new THREE.MeshStandardMaterial({color:0x0e0e0e,roughness:.60,metalness:.25}),
+  blade:  new THREE.MeshStandardMaterial({color:0x9aaa9a,roughness:.45,metalness:.55}),
+  valve:  new THREE.MeshStandardMaterial({color:0x3a5428,roughness:.68,metalness:.18}),
+  mesh:   new THREE.MeshStandardMaterial({color:0x2a3a1e,roughness:.88,metalness:.10}),
+  logo:   new THREE.MeshStandardMaterial({color:0xd0e8b0,roughness:.50,metalness:.08}),
+  pellet: new THREE.MeshStandardMaterial({color:0x060808,roughness:.70,metalness:.05}),
+  comp:   new THREE.MeshStandardMaterial({color:0x3a4a1e,roughness:.99,metalness:.00}),
+  liquid: new THREE.MeshStandardMaterial({color:0x6b4a18,roughness:.15,metalness:.00,transparent:true,opacity:.88}),
+  arrow:  new THREE.MeshStandardMaterial({color:0x44aaff,roughness:.30,metalness:.10,transparent:true,opacity:.85}),
+  glass:  new THREE.MeshStandardMaterial({color:0x88bbaa,roughness:.10,metalness:.00,transparent:true,opacity:.12}),
+};
+
+// chunk materials for compost (pre-defined, reused)
+const CM = [
+  new THREE.MeshStandardMaterial({color:0x3a4a18,roughness:.99,metalness:0}),
+  new THREE.MeshStandardMaterial({color:0x4a5820,roughness:.99,metalness:0}),
+  new THREE.MeshStandardMaterial({color:0x586828,roughness:.99,metalness:0}),
+  new THREE.MeshStandardMaterial({color:0x3e4e1a,roughness:.99,metalness:0}),
+  new THREE.MeshStandardMaterial({color:0x506020,roughness:.99,metalness:0}),
+  new THREE.MeshStandardMaterial({color:0xb84020,roughness:.98,metalness:0}),
+  new THREE.MeshStandardMaterial({color:0xd06030,roughness:.98,metalness:0}),
+  new THREE.MeshStandardMaterial({color:0x8a4818,roughness:.98,metalness:0}),
+];
+
+// ── HELPERS ─────────────────────────────────────────────────────────
+function bx(w,h,d,mat,x,y,z,ry){
+  const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);
+  m.position.set(x,y,z);
+  if(ry) m.rotation.y=ry;
+  m.castShadow=true; m.receiveShadow=true;
+  return m;
+}
+function cy(rt,rb,h,seg,mat,x,y,z,rx){
+  const m=new THREE.Mesh(new THREE.CylinderGeometry(rt,rb,h,seg),mat);
+  m.position.set(x,y,z);
+  if(rx) m.rotation.x=rx;
+  m.castShadow=true; m.receiveShadow=true;
+  return m;
+}
+function sp(r,mat,x,y,z){
+  const m=new THREE.Mesh(new THREE.SphereGeometry(r,10,8),mat);
+  m.position.set(x,y,z); m.castShadow=true;
+  return m;
+}
+
+// ── PARTS REGISTRY ──────────────────────────────────────────────────
+const PARTS=[], root=new THREE.Group();
+scene.add(root);
+function part(name,col,desc,ex){
+  const g=new THREE.Group();
+  root.add(g);
+  const e={name,col,desc,group:g,
+    off:new THREE.Vector3(ex[0],ex[1],ex[2]),
+    base:new THREE.Vector3(0,0,0), vis:true, _el:null};
+  PARTS.push(e);
+  return g;
+}
+
+// ── MODEL CONSTANTS ─────────────────────────────────────────────────
+const BW=0.60, BH=0.96, BD=0.60; // body width/height/depth
+const fz=BD/2;                    // front face Z
+
+// ── 1. MAIN BODY ────────────────────────────────────────────────────
+const gBody=part('Main Body','#3d5a30','Outer olive-green PP plastic shell. 48×30×30 cm.',[0,0,0]);
+// NO solid top cap — replaced by frame strips so chambers are visible when lid opens
+// Outer perimeter frame at top (4 strips, leaving two open holes)
+const topY=BH/2, topT=.022, topW=BW, topD=BD;
+const LS2=0.018; // divider strip width
+const HW2=(BW-LS2)/2; // half width of each opening
+// Front top strip
+gBody.add(bx(topW,topT,.030,M.body,0,topY,topD/2-.015));
+// Back top strip
+gBody.add(bx(topW,topT,.030,M.body,0,topY,-topD/2+.015));
+// Left top strip
+gBody.add(bx(.030,topT,topD,M.body,-topW/2+.015,topY,0));
+// Right top strip
+gBody.add(bx(.030,topT,topD,M.body, topW/2-.015,topY,0));
+// Center divider strip (between left and right chambers)
+gBody.add(bx(LS2,topT,topD,M.dark,0,topY,0));
+// Side walls, back wall, front wall, bottom
+gBody.add(bx(.018,BH,BD,M.body,-BW/2,0,0));       // left wall
+gBody.add(bx(.018,BH,BD,M.body, BW/2,0,0));       // right wall
+gBody.add(bx(BW,BH,.018,M.body,0,0,-BD/2));       // back wall
+gBody.add(bx(BW,BH,.018,M.body,0,0,BD/2));        // front wall
+gBody.add(bx(BW,.018,BD,M.body,0,-BH/2,0));       // bottom
+
+// ── 2. TOP LID (unified, hinges open) ───────────────────────────────
+const LY=BH/2, LT=0.040, LS=0.016, HW=(BW-LS)/2;
+const gLid=part('Top Lid','#2a3d20','Unified top lid. Left=airlock, Right=filter vent. Hinges open backward.',[0,0.6,0]);
+const pivL=new THREE.Group();
+pivL.position.set(0,LY,-BD/2);   // hinge at back-top edge
+gLid.add(pivL);
+// panel
+pivL.add(bx(BW,LT,BD,M.darker,0,LT/2,BD/2));
+// perimeter lip
+pivL.add(bx(BW-.01,LT*.22,.01,M.dark,0,LT+.003,.004));
+pivL.add(bx(BW-.01,LT*.22,.01,M.dark,0,LT+.003,BD-.004));
+pivL.add(bx(.01,LT*.22,BD-.01,M.dark,-(BW/2)+.005,LT+.003,BD/2));
+pivL.add(bx(.01,LT*.22,BD-.01,M.dark, (BW/2)-.005,LT+.003,BD/2));
+// center groove divider
+pivL.add(bx(LS,LT*.18,BD-.01,M.handle,0,LT+.002,BD/2));
+
+// ── LEFT HALF: WASTE INPUT AREA ──────────────────────────────────
+// Recessed opening with raised frame, inner dark void, latch handle
+const apX=-(HW/2+LS/2), apZ=BD/2, apW=HW-.028, apD=BD-.028;
+const apFrameMat=new THREE.MeshStandardMaterial({color:0x253818,roughness:.86,metalness:.05});
+const apOpenMat =new THREE.MeshStandardMaterial({color:0x080e06,roughness:.99,metalness:.00});
+const apLipMat  =new THREE.MeshStandardMaterial({color:0x1e2e14,roughness:.88,metalness:.04});
+// Outer raised frame (raised above lid surface)
+pivL.add(bx(apW+.022,LT*.30,apD+.022,apFrameMat,apX,LT+.004,apZ));
+// Recessed dark opening (the waste input hole)
+pivL.add(bx(apW,LT*.20,apD,apOpenMat,apX,LT+.006,apZ));
+// Inner lip/step rim
+pivL.add(bx(apW-.010,LT*.12,apD-.010,apLipMat,apX,LT+.012,apZ));
+// Front flap/hinge lip (the flip-open door edge, front side)
+pivL.add(bx(apW+.018,.020,.018,apFrameMat,apX,LT+.014,apZ+apD/2-.006));
+// Two hinge knuckles on back of waste door
+pivL.add(cy(.010,.010,.040,8,M.metald,apX-.06,LT*.5,.008,0));
+pivL.add(cy(.010,.010,.040,8,M.metald,apX+.06,LT*.5,.008,0));
+// Pull latch (small tab at front-center of waste opening)
+pivL.add(bx(.044,.018,.024,M.handle,apX,LT+.016,apZ+apD/2+.004));
+// Grab slot under latch
+pivL.add(bx(.030,.008,.016,apOpenMat,apX,LT+.016,apZ+apD/2+.010));
+// Label bar: "WASTE INPUT" (3 raised stripes = text representation)
+const lblMat=new THREE.MeshStandardMaterial({color:0x4a7a30,roughness:.55,metalness:.1});
+for(let li=0;li<3;li++){
+  pivL.add(bx(.100,.006,.005,lblMat,apX-.04+li*.04,LT+.018,apZ-apD/2+.018));
+}
+// Corner guards (4 raised corner bumps like real bin latches)
+for(let cx2 of[apX-apW/2+.008, apX+apW/2-.008]){
+  for(let cz2 of[apZ-apD/2+.008, apZ+apD/2-.008]){
+    pivL.add(bx(.022,.018,.022,apFrameMat,cx2,LT+.006,cz2));
+  }
+}
+
+// ── RIGHT HALF: ODOR EXHAUST VENT ────────────────────────────────
+// Raised vent housing with louvre slots for smell/air to exit
+const vpX=HW/2+LS/2, vpW=HW-.028, vpD=BD-.028;
+const ventHousMat=new THREE.MeshStandardMaterial({color:0x1e2e14,roughness:.85,metalness:.05});
+const ventSlotMat=new THREE.MeshStandardMaterial({color:0x060e04,roughness:.95,metalness:.00});
+const ventRimMat =new THREE.MeshStandardMaterial({color:0x2a3e1a,roughness:.80,metalness:.08});
+// Outer raised vent housing
+pivL.add(bx(vpW+.020,LT*.28,vpD+.020,ventRimMat,vpX,LT+.003,apZ));
+// Vent surface (dark background)
+pivL.add(bx(vpW,LT*.16,vpD,ventHousMat,vpX,LT+.006,apZ));
+// Louvre slots — 7 horizontal rows across full vent width
+const louvreW=vpW-.016, louvreD=.012, louvreGap=.028;
+for(let li=0;li<7;li++){
+  const lz=apZ-vpD/2+.025+li*louvreGap;
+  // Dark slot gap
+  pivL.add(bx(louvreW,.007,louvreD,ventSlotMat,vpX,LT+.010,lz));
+  // Raised louvre blade (angled slightly — front edge higher)
+  const louvreBlade=new THREE.Mesh(new THREE.BoxGeometry(louvreW,.008,louvreD+.004),ventHousMat);
+  louvreBlade.position.set(vpX,LT+.012,lz+.002);
+  louvreBlade.rotation.x=0.18; // slight forward tilt for directional airflow look
+  louvreBlade.castShadow=true;
+  pivL.add(louvreBlade);
+}
+// Charcoal cartridge indicator (small square inset at top-right of vent)
+pivL.add(bx(.060,.010,.060,new THREE.MeshStandardMaterial({color:0x080808,roughness:.6,metalness:.1}),
+  vpX+vpW/2-.040,LT+.012,apZ-vpD/2+.040));
+// Dot pellet bumps on cartridge
+for(let di=0;di<3;di++) for(let dj=0;dj<3;dj++){
+  pivL.add(cy(.006,.006,.012,6,M.pellet,
+    vpX+vpW/2-.052+di*.018, LT+.016, apZ-vpD/2+.028+dj*.018));
+}
+// hinge knuckles (back edge)
+pivL.add(cy(.016,.016,.050,9,M.metald,-BW/4,LT*.5,.010,0));
+pivL.add(cy(.016,.016,.050,9,M.metald, BW/4,LT*.5,.010,0));
+// side tabs
+pivL.add(bx(.030,.035,.060,M.darker,-(BW/2)-.015,LT*.4,BD*.35));
+pivL.add(bx(.030,.035,.060,M.darker, (BW/2)+.015,LT*.4,BD*.35));
+// front handle stub
+pivL.add(bx(.026,.030,.026,M.darker,0,LT*.4,BD+.010));
+
+// ── 3. INTERIOR CHAMBERS ────────────────────────────────────────────
+// Deep visible chambers — left=dark airlock void, right=charcoal pellets
+// These are the holes you look into when the lid opens
+const gInt=part('Interior Chambers','#0e160a','Left: dark airlock chamber. Right: activated charcoal pellet bed. Visible when lid opens.',[0,0,0]);
+const chamWallMat =new THREE.MeshStandardMaterial({color:0x1a2614,roughness:.92,metalness:.02});
+const chamFloorMat=new THREE.MeshStandardMaterial({color:0x080e06,roughness:.99,metalness:.00});
+const chamInnerMat=new THREE.MeshStandardMaterial({color:0x0a1008,roughness:.99,metalness:.00});
+
+const chDepth=0.20; // depth of visible chamber from top
+const chW=HW-.010;  // width of each chamber opening
+const chX_L=-(HW/2+LS/2); // left chamber center X
+const chX_R= (HW/2+LS/2); // right chamber center X
+
+// ── LEFT chamber: dark inner walls (airlock void) ──
+// 4 inner walls forming the shaft of the left opening
+gInt.add(bx(chW,chDepth,.010,chamWallMat, chX_L, LY-chDepth/2, -BD/2+.032));  // back inner wall
+gInt.add(bx(chW,chDepth,.010,chamWallMat, chX_L, LY-chDepth/2,  BD/2-.032));  // front inner wall
+gInt.add(bx(.010,chDepth,BD-.06,chamWallMat, chX_L-chW/2, LY-chDepth/2, 0)); // left inner wall
+gInt.add(bx(.010,chDepth,BD-.06,chamWallMat, chX_L+chW/2, LY-chDepth/2, 0)); // right inner wall (next to divider)
+// Dark floor visible at bottom of left chamber
+gInt.add(bx(chW-.002,.008,BD-.06,chamFloorMat, chX_L, LY-chDepth+.004, 0));
+// Very dark interior fill (the void you see when looking in)
+gInt.add(bx(chW-.014,chDepth-.01,BD-.07,chamInnerMat, chX_L, LY-chDepth/2+.005, 0));
+
+// ── RIGHT chamber: charcoal pellet bed ──
+gInt.add(bx(chW,chDepth,.010,chamWallMat, chX_R, LY-chDepth/2, -BD/2+.032));
+gInt.add(bx(chW,chDepth,.010,chamWallMat, chX_R, LY-chDepth/2,  BD/2-.032));
+gInt.add(bx(.010,chDepth,BD-.06,chamWallMat, chX_R-chW/2, LY-chDepth/2, 0));
+gInt.add(bx(.010,chDepth,BD-.06,chamWallMat, chX_R+chW/2, LY-chDepth/2, 0));
+// Pellet bed — fills the right chamber, visible from above
+const pelletBedY = LY-.040; // close to top so clearly visible
+gInt.add(bx(chW-.012,.065,BD-.07,M.pellet, chX_R, pelletBedY, 0));
+// Dense pellet spheres on top surface (visible when looking down)
+const pelletRows=5, pelletCols=6;
+for(let pr=0;pr<pelletRows;pr++){
+  for(let pc=0;pc<pelletCols;pc++){
+    const px=chX_R - (chW/2-.025) + pc*((chW-.04)/(pelletCols-1));
+    const pz= -(BD/2-.05) + pr*((BD-.10)/(pelletRows-1));
+    gInt.add(sp(.012,M.pellet, px, pelletBedY+.034, pz));
+  }
+}
+
+// Center divider wall (full height, between the two chambers)
+gInt.add(bx(LS+.006,chDepth+.002,BD+.002,M.dark,0,LY-chDepth/2,0));
+
+// ── 4. AIRLOCK DOOR (front face, top-left) ──────────────────────────
+const gAir=part('Airlock Outer Door','#354a28','Sealed dual-door inlet. Outer door on front face, top-left.',[-.8,.4,.5]);
+const dX=-(BW/2-.112), dY=BH/2-.112, dS=.172;
+gAir.add(bx(dS+.022,dS+.022,.015,M.dark,dX,dY,fz));
+gAir.add(bx(dS,dS,.011,M.darker,dX,dY,fz+.005));
+gAir.add(bx(dS-.018,dS-.018,.012,new THREE.MeshStandardMaterial({color:0x1e2e14,roughness:.9}),dX,dY,fz+.006));
+gAir.add(bx(.038,.014,.016,M.handle,dX,dY-dS/2+.020,fz+.014));
+gAir.add(bx(.011,.038,.016,M.metal,dX-dS/2+.006,dY+.036,fz+.010));
+gAir.add(bx(.011,.038,.016,M.metal,dX-dS/2+.006,dY-.036,fz+.010));
+
+// ── 5. CHARCOAL VENT (front face, top-right) ────────────────────────
+const gFilt=part('Charcoal Filter Vent','#0e0e0e','Activated charcoal vent. Top-right of front face. All air exits here.',[.5,.8,0]);
+const vX=BW/2-.112, vY=BH/2-.112, vS=.172;
+gFilt.add(bx(vS+.022,vS+.022,.015,M.dark,vX,vY,fz));
+gFilt.add(bx(vS,vS,.010,M.filter,vX,vY,fz+.005));
+for(let r=0;r<5;r++) for(let c=0;c<5;c++){
+  const hx=vX-vS/2+.022+c*.032, hy=vY-vS/2+.022+r*.032;
+  gFilt.add(bx(.017,.017,.014,new THREE.MeshStandardMaterial({color:0x060606,roughness:.9}),hx,hy,fz+.005));
+}
+// center divider front face
+gFilt.add(bx(.012,vS*2.1,.012,M.dark,0,vY,fz));
+
+// ── 6. MIXING CRANK (right side) ────────────────────────────────────
+// Olive ring disc facing outward from right wall, silver axle, dark L-arm + grip bar
+const gCrank=part('Manual Mixing Crank','#4a6632','Side crank. Olive ring disc with recessed center, silver axle, dark arm + grip bar.',[.9,0,0]);
+const cdM =new THREE.MeshStandardMaterial({color:0x4a6632,roughness:.70,metalness:.12});
+const cdRim=new THREE.MeshStandardMaterial({color:0x3a5222,roughness:.65,metalness:.18});
+const cdHub=new THREE.MeshStandardMaterial({color:0x9aaa88,roughness:.35,metalness:.75});
+const cdHol=new THREE.MeshStandardMaterial({color:0x141e0a,roughness:.55,metalness:.20});
+const cdArm=new THREE.MeshStandardMaterial({color:0x252820,roughness:.42,metalness:.62});
+
+// Disc center X: pushed out from wall so fully visible
+// Cylinders for disc must rotate on Z axis to face sideways (X axis outward)
+const dcx = BW/2+.032; // disc center, well outside the body wall
+const dcy = .08;       // vertical center
+
+function discCyl(rt,rb,h,seg,mat,ox,oy){
+  // Creates a cylinder rotated 90° on Z so it faces along X axis (outward from side wall)
+  const mesh = new THREE.Mesh(new THREE.CylinderGeometry(rt,rb,h,seg), mat);
+  mesh.rotation.z = Math.PI/2;
+  mesh.position.set(dcx+ox, dcy+oy, 0);
+  mesh.castShadow=true; mesh.receiveShadow=true;
+  return mesh;
+}
+
+// Outer rim (widest ring, thin)
+gCrank.add(discCyl(.095,.095,.014,28,cdRim,  0,    0));
+// Main disc face
+gCrank.add(discCyl(.082,.082,.028,28,cdM,    .007, 0));
+// Recessed bowl (dark, slightly further out)
+gCrank.add(discCyl(.044,.044,.030,20,cdHol,  .012, 0));
+// Inner raised ring around bowl
+gCrank.add(discCyl(.058,.058,.026,20,cdM,    .009, 0));
+// Silver axle nub (protruding outward from disc center)
+gCrank.add(discCyl(.016,.016,.048,12,cdHub,  .026, 0));
+gCrank.add(discCyl(.022,.018,.008,12,cdHub,  .052, 0)); // axle cap flange
+
+// Wall mount: short cylinder connecting disc back to wall
+gCrank.add(discCyl(.020,.020,.052,12,cdRim, -.022, 0));
+
+// Arm: short rod from disc-center down, then long horizontal grip bar to the left
+// Vertical connector (exits disc at bottom-center, goes down)
+const armV = new THREE.Mesh(new THREE.CylinderGeometry(.011,.011,.075,10), cdArm);
+armV.position.set(dcx+.012, dcy-.068, 0);
+armV.castShadow=true;
+gCrank.add(armV);
+
+// Horizontal grip bar (long cylinder, goes left from bottom of arm)
+const armH = new THREE.Mesh(new THREE.CylinderGeometry(.013,.013,.180,12), cdArm);
+armH.rotation.z = Math.PI/2;
+armH.position.set(dcx-.068, dcy-.105, 0);
+armH.castShadow=true;
+gCrank.add(armH);
+
+// Rounded end caps on grip bar
+gCrank.add(sp(.016, cdArm, dcx-.158, dcy-.105, 0));
+gCrank.add(sp(.015, cdArm, dcx+.022, dcy-.105, 0));
+
+// ── 7. AERATION SHAFT (central perforated cylinder) ─────────────────
+// ── 7. AERATION SHAFT ───────────────────────────────────────────────
+const gShaft=part('Aeration Shaft','#8a9898','Central perforated metallic shaft running full height.',[0,0,0]);
+const shaftMat=new THREE.MeshStandardMaterial({color:0x8a9898,roughness:.38,metalness:.72});
+const holeMat =new THREE.MeshStandardMaterial({color:0x0e1210,roughness:.8,metalness:.2});
+// Main shaft body — renderOrder=1 so always visible above compost
+const shCyl=cy(.028,.028,.74,16,shaftMat,0,-.05,0); shCyl.renderOrder=1; gShaft.add(shCyl);
+const shTop=cy(.032,.032,.012,16,shaftMat,0,.32,0);  shTop.renderOrder=1; gShaft.add(shTop);
+const shBot=cy(.034,.034,.012,16,shaftMat,0,-.43,0); shBot.renderOrder=1; gShaft.add(shBot);
+// Perforations — pairs of dark squares on front and back faces at each row
+// Offset slightly so no z-fighting with shaft surface
+for(let i=0;i<16;i++){
+  const hy=-.36+i*.044;
+  gShaft.add(bx(.016,.016,.006,holeMat, .000,hy, .030)); // front hole
+  gShaft.add(bx(.016,.016,.006,holeMat, .000,hy,-.030)); // back hole
+  gShaft.add(bx(.006,.016,.016,holeMat, .030,hy, .000)); // right hole
+  gShaft.add(bx(.006,.016,.016,holeMat,-.030,hy, .000)); // left hole
+}
+
+// ── 8. MIXING BLADES (S-curved, 4 levels, left+right) ────────────────
+// Blades are large, clearly visible, extend well past compost fill width
+const gBlade=part('Mixing Blades','#b0bdb0','S-curved mixing blades at 4 heights. Left+right pairs. Rotate to mix compost.',[.45,0,0]);
+const bMat=new THREE.MeshStandardMaterial({color:0xb0bdb0,roughness:.35,metalness:.60,side:THREE.DoubleSide});
+
+for(let i=0;i<4;i++){
+  const by=-.26+i*.155;
+
+  // LEFT blade — 3 segments forming S: inner tilts up, mid flat, outer tilts down
+  const lA=new THREE.Mesh(new THREE.BoxGeometry(.100,.022,.050),bMat);
+  lA.position.set(-.072,by+.016,0); lA.rotation.z= .22; lA.castShadow=true; lA.renderOrder=1; gBlade.add(lA);
+
+  const lB=new THREE.Mesh(new THREE.BoxGeometry(.080,.022,.050),bMat);
+  lB.position.set(-.148,by,0); lB.castShadow=true; lB.renderOrder=1; gBlade.add(lB);
+
+  const lC=new THREE.Mesh(new THREE.BoxGeometry(.080,.022,.050),bMat);
+  lC.position.set(-.210,by-.016,0); lC.rotation.z=-.22; lC.castShadow=true; lC.renderOrder=1; gBlade.add(lC);
+
+  // RIGHT blade — mirror S
+  const rA=new THREE.Mesh(new THREE.BoxGeometry(.100,.022,.050),bMat);
+  rA.position.set(.072,by-.016,0); rA.rotation.z=-.22; rA.castShadow=true; rA.renderOrder=1; gBlade.add(rA);
+
+  const rB=new THREE.Mesh(new THREE.BoxGeometry(.080,.022,.050),bMat);
+  rB.position.set(.148,by,0); rB.castShadow=true; rB.renderOrder=1; gBlade.add(rB);
+
+  const rC=new THREE.Mesh(new THREE.BoxGeometry(.080,.022,.050),bMat);
+  rC.position.set(.210,by+.016,0); rC.rotation.z= .22; rC.castShadow=true; rC.renderOrder=1; gBlade.add(rC);
+
+  // Collar ring at shaft junction
+  const collar=new THREE.Mesh(new THREE.CylinderGeometry(.036,.036,.020,12),bMat);
+  collar.position.set(0,by,0); collar.castShadow=true; collar.renderOrder=1; gBlade.add(collar);
+}
+
+// ── 9. COMPOST FILL ─────────────────────────────────────────────────
+const gComp=part('Compost Material','#3a4a1e','Organic compost — green/brown chunks, food scraps at various decomposition stages.',[0,0,0]);
+// Fill blocks — narrower than blade reach so blades are visible
+const cFill =new THREE.MeshStandardMaterial({color:0x364418,roughness:.99,metalness:0});
+const cFill2=new THREE.MeshStandardMaterial({color:0x2e3c14,roughness:.99,metalness:0});
+// Two side fill blocks, narrow enough to show blades sticking through
+gComp.add(bx(.16,.54,BD-.06,cFill, -.12,-.03,0));
+gComp.add(bx(.16,.54,BD-.06,cFill2, .12,-.03,0));
+// Chunk lumps on top surface of each fill block
+const chunks=[
+  [.16,.08,.14,0],[-.14,-.08,-.10,1],[.05,-.20,.15,2],[-.17,.05,-.14,3],
+  [.09,-.26,.05,4],[-.07,.14,-.17,0],[.18,-.12,.02,1],[-.11,.07,.18,2],
+  [.03,-.07,-.18,3],[.16,.17,-.07,4],[-.15,-.20,.14,0],[.07,.11,-.12,1],
+  [-.05,-.15,.07,2],[.14,-.09,-.15,3],[-.18,.03,.09,4],[.08,.22,.17,0],
+  [-.03,-.27,-.05,1],[.15,.06,.13,2],[-.13,.19,-.10,3],[.02,-.23,.19,4],
+  [.17,.04,-.14,0],[-.07,-.16,.12,1],[.11,.14,.08,2],[-.16,-.05,-.08,3],
+];
+chunks.forEach(function(d){
+  var sz=.026+.012*(d[3]%3);
+  gComp.add(bx(sz,sz*.85,sz,CM[d[3]%5],d[0],d[1],d[2],d[3]*.52));
+});
+// Orange/red food scraps
+const scraps=[
+  [.13,.06,.11,5],[-.12,-.06,.13,6],[.06,.18,-.10,7],[-.10,-.11,-.08,5],
+  [.15,-.03,.06,6],[-.08,.12,.15,7],[.13,-.16,-.08,5],[-.14,.08,.04,6],
+  [.04,-.10,.20,7],[-.10,.15,-.12,5],[.18,.02,-.05,6],[-.05,-.19,.09,7],
+];
+scraps.forEach(function(d){
+  gComp.add(sp(.015,CM[d[3]],d[0],d[1],d[2]));
+});
+
+// ── 10. AIR FLOW ARROWS (blue, rising from vent) ─────────────────────
+const gArrow=part('Air Flow Arrows','#44aaff','Blue arrows show air rising through the activated charcoal vent.',[0,.9,0]);
+const aX=BW/2-.112, aY=BH/2+.055;
+for(let i=0;i<3;i++){
+  const ax=aX-.038+i*.038;
+  gArrow.add(cy(.007,.007,.065,7,M.arrow,ax,aY+.032,-.12,0));
+  gArrow.add(cy(.002,.015,.022,7,M.arrow,ax,aY+.076,-.12,0));
+}
+
+// ── 11. SIDE AIR INTAKES ────────────────────────────────────────────
+// Recessed rectangular vent slot, lower on each side face
+const gVent=part('Side Air Intakes','#1a2a12','Recessed side vent slot on lower body. Passive fresh-air intake.',[.8,0,-.4]);
+const vsM=new THREE.MeshStandardMaterial({color:0x111808,roughness:.93,metalness:.02});
+const vfM=new THREE.MeshStandardMaterial({color:0x2a3c1a,roughness:.87,metalness:.04});
+for(let s of[-1,1]){
+  // Outer raised frame
+  gVent.add(bx(.018,.072,.110, vfM, s*(BW/2+.001), -.30, .00));
+  // Recessed dark slot
+  gVent.add(bx(.014,.055,.090, vsM, s*(BW/2+.002), -.30, .00));
+  // Louvre bars (3 horizontal lines inside slot)
+  for(let i=0;i<3;i++){
+    gVent.add(bx(.016,.008,.086, vfM, s*(BW/2+.001), -.32+i*.018, .00));
+  }
+}
+
+// ── 12. MESH PLATFORM ───────────────────────────────────────────────
+const gMesh=part('Mesh Platform','#2a3a1e','Perforated mesh. Separates compost from leachate tray. Removable.',[0,-.75,0]);
+gMesh.add(bx(BW-.040,.016,BD-.040,M.mesh,0,-.368,0));
+for(let i=0;i<9;i++) gMesh.add(bx(BW-.050,.006,.004,M.dark,0,-.362,-.18+i*.045));
+for(let i=0;i<9;i++) gMesh.add(bx(.004,.006,BD-.050,M.dark,-.18+i*.045,-.362,0));
+gMesh.add(bx(BW-.040,.020,.014,M.mesh,0,-.368,BD/2-.018));
+
+// ── 13. LEACHATE TRAY ───────────────────────────────────────────────
+const gTray=part('Leachate Tray','#3a2a10','Bottom tray. Collects brown leachate liquid that drains through the mesh.',[0,-1.05,0]);
+const tM=new THREE.MeshStandardMaterial({color:0x1e2a14,roughness:.88,metalness:.05});
+gTray.add(bx(BW-.040,.110,BD-.040,tM,0,-.432,0));
+gTray.add(bx(BW-.072,.058,BD-.072,M.liquid,0,-.412,0));
+gTray.add(bx(BW-.040,.007,BD-.040,new THREE.MeshStandardMaterial({color:0x181e10,roughness:.9}),0,-.488,0));
+
+// ── 14. DRAIN VALVE (front bottom) ──────────────────────────────────
+const gValve=part('Drain Valve','#3d5a28','Front-bottom nozzle. Opens to drain leachate from tray.',[0,-.8,.8]);
+gValve.add(bx(.058,.048,.018,M.dark,0,-BH/2+.068,fz+.007));
+gValve.add(cy(.021,.024,.058,11,M.valve,0,-BH/2+.068,fz+.038,Math.PI/2));
+gValve.add(cy(.015,.021,.022,11,M.valve,0,-BH/2+.068,fz+.072,Math.PI/2));
+
+// ── 15. SIDE HANDLES ────────────────────────────────────────────────
+// Recessed bracket slot at top of each side — wide housing with grip bar
+const gHnd=part('Side Handles','#1e2816','Recessed carry bracket on each side. Wide slot housing with grip bar across it.',[-.95,.18,0]);
+const hfM=new THREE.MeshStandardMaterial({color:0x2e4220,roughness:.86,metalness:.05});
+const hsM=new THREE.MeshStandardMaterial({color:0x141c0a,roughness:.93,metalness:.02});
+for(let s of[-1,1]){
+  // Outer raised housing frame (wider than tall, sits ON the wall)
+  gHnd.add(bx(.018,.095,.120, hfM, s*(BW/2+.001), BH*.30, .00));
+  // Recessed dark slot interior
+  gHnd.add(bx(.014,.072,.096, hsM, s*(BW/2+.002), BH*.30, .00));
+  // Horizontal grip bar (thick rod across the top third of the slot)
+  gHnd.add(bx(.020,.022,.090, M.handle, s*(BW/2+.001), BH*.30+.022, .00));
+  // Horizontal divider line (lower section of slot)
+  gHnd.add(bx(.016,.005,.092, hsM, s*(BW/2+.001), BH*.30-.018, .00));
+}
+
+// ── 16. LOGO (front center) ─────────────────────────────────────────
+const gLogo=part('FRESHBIN Logo','#d0e8b0','Brand logo embossed on front face. Leaf icon + FRESHBIN + tagline.',[0,0,.8]);
+const lz=fz+.003;
+gLogo.add(bx(.007,.054,.004,M.logo,0,-.040,lz));
+gLogo.add(bx(.042,.060,.004,M.logo,0,.014,lz));
+gLogo.add(bx(.035,.046,.004,M.logo,-.036,.005,lz));
+gLogo.add(bx(.035,.046,.004,M.logo, .036,.005,lz));
+gLogo.add(bx(.210,.020,.004,M.logo,0,-.092,lz));
+gLogo.add(bx(.155,.009,.003,new THREE.MeshStandardMaterial({color:0xb0c898,roughness:.6}),0,-.120,lz));
+gLogo.add(bx(.125,.009,.003,new THREE.MeshStandardMaterial({color:0xb0c898,roughness:.6}),0,-.136,lz));
+
+// ── 17. BODY DETAILS ────────────────────────────────────────────────
+// Only vertical seam lines on side faces — no horizontal ribs
+// (Smooth body per reference photo)
+const gRib=part('Body Details','#2a3d20','Vertical seam lines on side faces. No horizontal ribs — smooth body.',[0,0,0]);
+// Vertical center seam on right side face
+gRib.add(bx(.006,BH,.006,M.dark, BW/2-.002, 0, .00));
+// Vertical center seam on left side face
+gRib.add(bx(.006,BH,.006,M.dark,-BW/2+.002, 0, .00));
+// Top edge border strip (subtle lid seat)
+gRib.add(bx(BW+.008,.010,BD+.008,M.dark,0,BH/2-.004,0));
+
+// ── STORE BASE POSITIONS ────────────────────────────────────────────
+PARTS.forEach(p=>p.base.copy(p.group.position));
+
+// ── BUILD PARTS UI ──────────────────────────────────────────────────
+const pl=document.getElementById('pl');
+const vl=document.getElementById('vl');
+PARTS.forEach(function(p,i){
+  const d=document.createElement('div');
+  d.className='pi';
+  d.innerHTML='<div class="pd" style="background:'+p.col+'"></div><div class="pn">'+p.name+'</div>';
+  d.onclick=function(){hlPart(i);};
+  pl.appendChild(d);
+  p._el=d;
+  const lb=document.createElement('label');
+  lb.style.cssText='display:flex;align-items:center;gap:7px;font-size:10px;color:#999;cursor:pointer';
+  const ck=document.createElement('input');
+  ck.type='checkbox'; ck.checked=true; ck.style.accentColor='#7ec850';
+  ck.onchange=function(){p.group.visible=ck.checked;};
+  lb.appendChild(ck);
+  lb.appendChild(document.createTextNode(p.name));
+  vl.appendChild(lb);
+});
+
+// ── CAMERA CONTROLS ─────────────────────────────────────────────────
+let tTheta=0.70,tPhi=0.68,tRad=3.20;
+let cTheta=0.70,cPhi=0.68,cRad=3.20;
+let tLook=new THREE.Vector3(0,0,0), cLook=new THREE.Vector3(0,0,0);
+let drag=false,lx=0,ly=0,autoRot=false;
+
+canvas.addEventListener('mousedown',function(e){drag=true;lx=e.clientX;ly=e.clientY;});
+window.addEventListener('mouseup',function(){drag=false;});
+window.addEventListener('mousemove',function(e){
+  if(!drag)return;
+  tTheta-=(e.clientX-lx)*.005; tPhi=Math.max(.06,Math.min(Math.PI-.06,tPhi+(e.clientY-ly)*.005));
+  lx=e.clientX;ly=e.clientY;
+  svActive('v3d');
+});
+canvas.addEventListener('wheel',function(e){tRad=Math.max(1.0,Math.min(8,tRad+e.deltaY*.004));e.preventDefault();},{passive:false});
+
+// touch
+let ltd=0;
+canvas.addEventListener('touchstart',function(e){
+  if(e.touches.length===1){drag=true;lx=e.touches[0].clientX;ly=e.touches[0].clientY;}
+  if(e.touches.length===2) ltd=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
+  e.preventDefault();},{passive:false});
+canvas.addEventListener('touchend',function(){drag=false;});
+canvas.addEventListener('touchmove',function(e){
+  if(e.touches.length===1&&drag){
+    tTheta-=(e.touches[0].clientX-lx)*.006; tPhi=Math.max(.1,Math.min(Math.PI-.1,tPhi+(e.touches[0].clientY-ly)*.006));
+    lx=e.touches[0].clientX;ly=e.touches[0].clientY;
+  }
+  if(e.touches.length===2){
+    var d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
+    tRad=Math.max(1,Math.min(8,tRad-(d-ltd)*.01));ltd=d;
+  }
+  e.preventDefault();},{passive:false});
+
+// ── VIEW PRESETS ────────────────────────────────────────────────────
+function sv(v){
+  autoRot=false;
+  document.getElementById('bar').classList.remove('on');
+  if(v==='front'){tTheta=0;tPhi=Math.PI/2;tRad=3.5;tLook.set(0,0,0);}
+  else if(v==='side'){tTheta=Math.PI/2;tPhi=Math.PI/2;tRad=3.5;tLook.set(0,0,0);}
+  else if(v==='top'){tTheta=0;tPhi=.08;tRad=2.8;tLook.set(0,.2,0);}
+  else if(v==='cut'){tTheta=-.45;tPhi=1.05;tRad=2.5;tLook.set(0,0,0);}
+  else{tTheta=0.70;tPhi=0.68;tRad=3.20;tLook.set(0,0,0);}
+  svActive('v'+{front:'fr',side:'si',top:'to',cut:'cu','3d':'3d'}[v]);
+}
+function svActive(id){
+  ['v3d','vfr','vsi','vto','vcu'].forEach(function(b){
+    var el=document.getElementById(b);
+    if(el) el.classList.toggle('on',b===id);
+  });
+}
+function resetCam(){sv('3d');}
+function tp(id){document.getElementById(id).classList.toggle('h');}
+
+// ── EXPLODE ─────────────────────────────────────────────────────────
+let exOn=false,exFac=0,exTgt=0;
+function togEx(){
+  exOn=!exOn;
+  document.getElementById('bex').classList.toggle('on',exOn);
+  document.getElementById('es').classList.toggle('show',exOn);
+  exTgt=exOn?50:0;
+  document.getElementById('esl').value=exOn?50:0;
+}
+function setEx(v){exTgt=parseFloat(v);}
+
+// ── LID ─────────────────────────────────────────────────────────────
+let lidOpen=false,lidAng=0,lidTgt=0;
+const LID_OPEN=-Math.PI*.82;
+function togLid(){
+  lidOpen=!lidOpen;
+  lidTgt=lidOpen?LID_OPEN:0;
+  document.getElementById('bli').classList.toggle('on',lidOpen);
+  document.getElementById('bli').textContent=lidOpen?'📂 CLOSE LID':'📂 OPEN LID';
+  if(lidOpen){tTheta=0;tPhi=.52;tRad=2.8;tLook.set(0,.22,0);svActive('vto');}
+}
+
+// ── WIREFRAME ───────────────────────────────────────────────────────
+let wfOn=false;
+function togWF(){
+  wfOn=!wfOn;
+  document.getElementById('bwf').classList.toggle('on',wfOn);
+  PARTS.forEach(function(p){p.group.traverse(function(o){if(o.isMesh) o.material.wireframe=wfOn;});});
+}
+
+// ── X-RAY ───────────────────────────────────────────────────────────
+let xrOn=false;
+function togXR(){
+  xrOn=!xrOn;
+  PARTS[0].group.traverse(function(o){
+    if(o.isMesh){o.material=xrOn?M.glass:M.body;o.material.wireframe=wfOn;}
+  });
+}
+
+// ── AUTO ROTATE ─────────────────────────────────────────────────────
+function togAR(){
+  autoRot=!autoRot;
+  document.getElementById('bar').classList.toggle('on',autoRot);
+}
+
+// ── HIGHLIGHT ───────────────────────────────────────────────────────
+let hlIdx=-1;
+function hlPart(i){
+  PARTS.forEach(function(p){
+    p.group.traverse(function(o){if(o.isMesh&&o.material.emissive) o.material.emissive.set(0,0,0);});
+    if(p._el) p._el.classList.remove('on');
+  });
+  if(hlIdx===i){hlIdx=-1;return;}
+  hlIdx=i;
+  PARTS[i].group.traverse(function(o){if(o.isMesh&&o.material.emissive) o.material.emissive.set(.35,.7,.15);});
+  if(PARTS[i]._el) PARTS[i]._el.classList.add('on');
+  tLook.copy(PARTS[i].group.position);
+}
+
+// ── RAYCASTER / TOOLTIP ─────────────────────────────────────────────
+const rc=new THREE.Raycaster(), ms=new THREE.Vector2();
+const tip=document.getElementById('tip');
+canvas.addEventListener('mousemove',function(e){
+  ms.x=(e.clientX/window.innerWidth)*2-1;
+  ms.y=-(e.clientY/window.innerHeight)*2+1;
+  rc.setFromCamera(ms,camera);
+  var hits=[];
+  PARTS.forEach(function(p,i){
+    p.group.traverse(function(o){
+      if(o.isMesh){var r=rc.intersectObject(o);if(r.length) hits.push({i:i,d:r[0].distance});}
+    });
+  });
+  if(hits.length&&!drag){
+    hits.sort(function(a,b){return a.d-b.d;});
+    var p=PARTS[hits[0].i];
+    document.getElementById('ttn').textContent=p.name;
+    document.getElementById('ttd').textContent=p.desc;
+    tip.style.display='block';
+    tip.style.left=(e.clientX+14)+'px';
+    tip.style.top=(e.clientY-8)+'px';
+  }else{tip.style.display='none';}
+});
+canvas.addEventListener('click',function(e){
+  ms.x=(e.clientX/window.innerWidth)*2-1;
+  ms.y=-(e.clientY/window.innerHeight)*2+1;
+  rc.setFromCamera(ms,camera);
+  var hits=[];
+  PARTS.forEach(function(p,i){
+    p.group.traverse(function(o){if(o.isMesh){var r=rc.intersectObject(o);if(r.length) hits.push({i:i,d:r[0].distance});}});
+  });
+  if(hits.length){hits.sort(function(a,b){return a.d-b.d;});hlPart(hits[0].i);}
+});
+
+// ── ANIMATE ─────────────────────────────────────────────────────────
+const clk=new THREE.Clock();
+const cp=new THREE.Vector3();
+
+function animate(){
+  requestAnimationFrame(animate);
+  var dt=clk.getDelta(), t=clk.getElapsedTime(), sp=6;
+  if(autoRot) tTheta+=dt*.4;
+  cTheta+=(tTheta-cTheta)*Math.min(1,dt*sp);
+  cPhi+=(tPhi-cPhi)*Math.min(1,dt*sp);
+  cRad+=(tRad-cRad)*Math.min(1,dt*sp);
+  cLook.lerp(tLook,Math.min(1,dt*sp));
+  cp.set(cRad*Math.sin(cPhi)*Math.sin(cTheta),cRad*Math.cos(cPhi),cRad*Math.sin(cPhi)*Math.cos(cTheta));
+  cp.add(cLook);
+  camera.position.copy(cp);
+  camera.lookAt(cLook);
+  // explode
+  exFac+=(exTgt-exFac)*Math.min(1,dt*4);
+  var ef=exFac/100;
+  PARTS.forEach(function(p){
+    var tx=p.base.x+p.off.x*ef, ty=p.base.y+p.off.y*ef, tz=p.base.z+p.off.z*ef;
+    p.group.position.lerp(new THREE.Vector3(tx,ty,tz),Math.min(1,dt*5));
+  });
+  // lid
+  lidAng+=(lidTgt-lidAng)*Math.min(1,dt*5);
+  var lidPart=PARTS.find(function(p){return p.name==='Top Lid';});
+  if(lidPart&&lidPart.group.children[0]) lidPart.group.children[0].rotation.x=lidAng;
+  // shaft & blade spin
+  var shPart=PARTS.find(function(p){return p.name==='Aeration Shaft';});
+  var blPart=PARTS.find(function(p){return p.name==='Mixing Blades';});
+  var crPart=PARTS.find(function(p){return p.name==='Manual Mixing Crank';});
+  if(shPart) shPart.group.rotation.y=t*.32;
+  if(blPart) blPart.group.rotation.y=t*.32;
+  if(crPart){
+    // The whole crank group rotates around its own center — disc spins on X axis
+    crPart.group.rotation.x=Math.sin(t*1.1)*.20;
+  }
+  // arrow pulse
+  var arPart=PARTS.find(function(p){return p.name==='Air Flow Arrows';});
+  if(arPart){
+    arPart.group.position.y=Math.sin(t*2)*.007;
+    arPart.group.traverse(function(o){if(o.isMesh&&o.material.opacity!==undefined) o.material.opacity=.45+.45*Math.sin(t*2.2);});
+  }
+  renderer.render(scene,camera);
+}
+
+// ── LOADER ──────────────────────────────────────────────────────────
+var steps=['Initializing 3D Engine...','Loading Geometry...','Building Materials...','Assembling Components...','Applying Lighting...','Ready!'];
+var si=0;
+var lbar=document.getElementById('lb'), lstat=document.getElementById('lt');
+function tick(){
+  lbar.style.width=(si/(steps.length-1)*100)+'%';
+  lstat.textContent=steps[si];
+  si++;
+  if(si<steps.length){setTimeout(tick,260);}
+  else{setTimeout(function(){document.getElementById('loader').classList.add('gone');animate();},200);}
+}
+tick();
+</script>
+</body>
+</html>

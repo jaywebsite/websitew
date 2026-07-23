@@ -1,0 +1,978 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>RFID Smart Bookshelf – 3D</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#1a1a2e;font-family:'Segoe UI',sans-serif;overflow:hidden}
+#c{width:100vw;height:100vh}
+
+/* ── panels ── */
+#ui-overlay{position:fixed;top:16px;left:16px;z-index:10;background:rgba(10,10,30,.88);border:1px solid #334;border-radius:10px;padding:14px 18px;color:#cde;max-width:240px}
+#ui-overlay h2{font-size:12px;color:#7af;margin-bottom:6px;letter-spacing:1px;text-transform:uppercase}
+#ui-overlay p{font-size:10px;line-height:1.6;color:#9ab}
+#ui-overlay hr{border-color:#334;margin:7px 0}
+
+#legend{position:fixed;top:16px;right:16px;z-index:10;background:rgba(10,10,30,.88);border:1px solid #334;border-radius:10px;padding:12px 16px;color:#cde;min-width:190px}
+#legend h2{font-size:11px;color:#7af;margin-bottom:7px;letter-spacing:1px;text-transform:uppercase}
+.li{display:flex;align-items:center;gap:7px;margin:3px 0;font-size:10px}
+.dot{width:11px;height:11px;border-radius:3px;flex-shrink:0}
+
+#bottom-bar{position:fixed;bottom:0;left:0;right:0;z-index:10;background:rgba(10,10,30,.92);border-top:1px solid #334;display:flex;gap:8px;padding:7px 16px;align-items:center;flex-wrap:wrap}
+.sc{background:rgba(255,255,255,.05);border-radius:6px;padding:5px 12px;text-align:center}
+.sc .v{font-size:16px;font-weight:700;color:#7af}
+.sc .l{font-size:9px;color:#778;text-transform:uppercase;letter-spacing:1px}
+
+#tooltip{position:fixed;bottom:62px;left:50%;transform:translateX(-50%);background:rgba(10,10,30,.97);border:1px solid #556;border-radius:8px;padding:7px 14px;color:#cde;font-size:11px;display:none;pointer-events:none;white-space:nowrap;z-index:20}
+
+/* ── right buttons ── */
+.rbtn{position:fixed;right:16px;z-index:30;border-radius:12px;color:#fff;font-size:12px;font-weight:700;padding:12px 16px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:5px;min-width:106px;letter-spacing:.5px;transition:all .2s}
+.rbtn .ic{font-size:20px}
+#toggle-ui-btn{position:fixed;top:16px;right:16px;z-index:100;background:linear-gradient(135deg,#0d1b3e,#162d5c);border:1.5px solid #3a6bc4;border-radius:8px;color:#7abaff;font-size:11px;font-weight:600;padding:7px 12px;cursor:pointer;display:flex;align-items:center;gap:5px;box-shadow:0 0 12px rgba(58,107,196,.5);transition:all .2s}
+#toggle-ui-btn:hover{box-shadow:0 0 22px rgba(58,107,196,.8)}
+#scan-btn{top:58px;background:linear-gradient(135deg,#0f4c2a,#1a7a40);border:2px solid #2ecc71;box-shadow:0 0 16px rgba(46,204,113,.45)}
+#scan-btn:hover{background:linear-gradient(135deg,#1a7a40,#27ae60);box-shadow:0 0 26px rgba(46,204,113,.7)}
+#scan-btn:disabled{background:#222;border-color:#444;color:#666;box-shadow:none;cursor:not-allowed}
+.sdot{width:7px;height:7px;border-radius:50%;background:#2ecc71;box-shadow:0 0 7px #2ecc71;animation:blink 1.2s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+#explode-btn{top:178px;background:linear-gradient(135deg,#2c1a4a,#4a2a7a);border:2px solid #9b59b6;box-shadow:0 0 16px rgba(155,89,182,.45)}
+#explode-btn:hover{background:linear-gradient(135deg,#4a2a7a,#6c3fa8);box-shadow:0 0 26px rgba(155,89,182,.7)}
+#explode-btn.on{background:linear-gradient(135deg,#7a3a1a,#b85a20);border-color:#e67e22;box-shadow:0 0 22px rgba(230,126,34,.7)}
+#spread-wrap{position:fixed;top:304px;right:16px;z-index:30;background:rgba(10,10,30,.88);border:1px solid #5a3a8a;border-radius:10px;padding:9px 12px;display:none;flex-direction:column;gap:5px;min-width:106px}
+#spread-wrap label{font-size:9px;color:#b89dd8;text-align:center;letter-spacing:1px}
+#spread-slider{width:100%;accent-color:#9b59b6;cursor:pointer}
+
+/* ── part label overlay ── */
+#plc{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:25;overflow:hidden}
+.pl{position:absolute;transform:translate(-50%,-100%) translateY(-8px);background:rgba(8,12,30,.93);border:1px solid;border-radius:6px;padding:3px 9px;font-size:9px;font-weight:700;letter-spacing:.5px;white-space:nowrap;display:none;pointer-events:none}
+
+/* ── scan log ── */
+#scan-log{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:40;background:rgba(6,10,24,.97);border:1px solid #2ecc71;border-radius:14px;padding:18px 22px;color:#cde;width:500px;max-height:78vh;display:none;flex-direction:column;gap:9px;box-shadow:0 0 40px rgba(46,204,113,.3)}
+#scan-log h3{font-size:13px;color:#2ecc71;letter-spacing:1px;margin:0;display:flex;align-items:center;gap:7px}
+.sanim{font-size:17px;animation:spin 1s linear infinite;display:inline-block}
+@keyframes spin{to{transform:rotate(360deg)}}
+#pb-wrap{background:#112;border-radius:5px;height:7px;overflow:hidden}
+#pb{height:100%;background:linear-gradient(90deg,#2ecc71,#7af);border-radius:5px;width:0%;transition:width .3s}
+#se{flex:1;overflow-y:auto;max-height:300px;display:flex;flex-direction:column;gap:3px;font-size:10px}
+.se-row{display:flex;align-items:center;gap:8px;padding:4px 7px;border-radius:5px;background:rgba(255,255,255,.04);animation:fadeIn .3s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.se-row .bdg{padding:2px 7px;border-radius:3px;font-weight:700;font-size:9px;flex-shrink:0}
+.bdg.ok{background:#0d3320;color:#2ecc71;border:1px solid #2ecc71}
+.bdg.miss{background:#3a0d0d;color:#e74c3c;border:1px solid #e74c3c}
+.bdg.gone{background:#2a2000;color:#f39c12;border:1px solid #f39c12}
+.se-row .bid{color:#7af;font-weight:700;flex-shrink:0}
+.se-row .inf{color:#9ab;flex:1}
+#sum{border-top:1px solid #234;padding-top:9px;display:flex;gap:12px;flex-wrap:wrap}
+.si{text-align:center}
+.si .sv{font-size:18px;font-weight:700}
+.si .sl{font-size:8px;color:#556;text-transform:uppercase;letter-spacing:1px}
+#closelog{align-self:flex-end;background:#1a3a1a;border:1px solid #2ecc71;color:#2ecc71;border-radius:5px;padding:5px 14px;cursor:pointer;font-size:11px}
+#closelog:hover{background:#2ecc71;color:#000}
+
+/* ── row indicators ── */
+#ri{position:fixed;left:16px;top:50%;transform:translateY(-50%);z-index:30;display:flex;flex-direction:column;gap:5px}
+.rind{width:13px;height:13px;border-radius:50%;border:2px solid #334;background:#111;transition:all .3s}
+.rind.on{box-shadow:0 0 10px currentColor}
+
+/* ── SOFTWARE INTERFACE PANEL ── */
+#sw-panel{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:200;display:none;width:820px;max-width:96vw;max-height:90vh;background:#0b1120;border:1.5px solid #1e3460;border-radius:12px;overflow:hidden;box-shadow:0 0 60px rgba(30,52,96,.9);flex-direction:column}
+.sw-title{background:#0d1930;border-bottom:1px solid #1e3460;padding:9px 18px;text-align:center;color:#c8d8f8;font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;display:flex;align-items:center;justify-content:space-between}
+#sw-close{background:none;border:none;color:#7a9ad8;font-size:17px;cursor:pointer;padding:0 3px;line-height:1}
+#sw-close:hover{color:#e74c3c}
+.sw-body{display:flex;flex:1;overflow:hidden}
+.sw-sb{width:148px;min-width:148px;background:#0d1930;border-right:1px solid #1e3460;padding:14px 0;display:flex;flex-direction:column;gap:2px}
+.sw-ni{display:flex;align-items:center;gap:9px;padding:9px 16px;font-size:11px;color:#7a9ad8;cursor:pointer;transition:all .15s;border-left:3px solid transparent}
+.sw-ni:hover{background:rgba(255,255,255,.05);color:#c8d8f8}
+.sw-ni.act{color:#e74c3c;border-left-color:#e74c3c;background:rgba(231,76,60,.08)}
+.sw-main{flex:1;padding:14px 18px;overflow-y:auto;display:flex;flex-direction:column;gap:12px}
+.sw-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:9px}
+.sw-stat{border:1px solid #1e3460;border-radius:6px;padding:9px 12px;background:#0f1e38;display:flex;flex-direction:column;gap:2px}
+.sw-stat .sl{font-size:8px;letter-spacing:1.5px;text-transform:uppercase;color:#5a7ab8}
+.sw-stat .sv{font-size:26px;font-weight:700;line-height:1.1}
+.sw-stat.tot .sv{color:#c8d8f8}.sw-stat.av .sv{color:#2ecc71}.sw-stat.mp .sv{color:#e74c3c}.sw-stat.ms .sv{color:#c8d8f8}
+.sw-sec{font-size:11px;font-weight:700;color:#c8d8f8;letter-spacing:1px;text-transform:uppercase;margin-bottom:2px}
+.sw-tw{overflow-x:auto;border-radius:6px;border:1px solid #1a2e50}
+table.sw-t{width:100%;border-collapse:collapse;font-size:10px}
+table.sw-t thead tr{background:#0d1930}
+table.sw-t thead th{padding:7px 10px;text-align:left;color:#5a7ab8;font-weight:600;letter-spacing:.8px;border-bottom:1px solid #1e3460;white-space:nowrap}
+table.sw-t tbody tr{border-bottom:1px solid #111e35;transition:background .15s}
+table.sw-t tbody tr:hover{background:rgba(255,255,255,.04)}
+table.sw-t tbody td{padding:6px 10px;color:#c8d8f8}
+.swb{font-size:8px;font-weight:800;letter-spacing:1px;padding:2px 6px;border-radius:3px}
+.swb.ok{color:#2ecc71}.swb.mp{color:#e74c3c}.swb.ms{color:#888}
+.sw-leg{display:flex;gap:22px;font-size:10px;padding-top:4px;border-top:1px solid #1e3460}
+.sw-leg span{font-weight:700}.sw-leg .lg{color:#2ecc71}.sw-leg .lr{color:#e74c3c}.sw-leg .ll{color:#888}
+.sw-pg{display:none;flex-direction:column;gap:12px}
+.sw-pg.act{display:flex}
+.dg{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.dw{background:#0f1e38;border:1px solid #1e3460;border-radius:6px;padding:12px}
+.dw h4{font-size:9px;letter-spacing:1.5px;color:#5a7ab8;text-transform:uppercase;margin-bottom:9px}
+.rb{display:flex;align-items:center;gap:7px;margin:4px 0;font-size:10px;color:#c8d8f8}
+.rb .rl{width:78px;flex-shrink:0}.rb .rt{flex:1;background:#0d1930;border-radius:3px;height:7px;overflow:hidden}
+.rb .rf{height:100%;border-radius:3px;transition:width .8s}.rb .rc{width:26px;text-align:right;color:#7a9ad8;font-size:9px}
+.ai{display:flex;gap:9px;font-size:9px;color:#7a9ad8;padding:3px 0;border-bottom:1px solid #111e35}
+.ai .at{color:#3a5a88;flex-shrink:0;width:44px}.ai .ad{width:6px;height:6px;border-radius:50%;margin-top:2px;flex-shrink:0}
+.fbr{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:4px}
+.fb{font-size:9px;padding:3px 10px;border-radius:4px;cursor:pointer;border:1px solid #1e3460;background:#0f1e38;color:#7a9ad8;transition:all .15s}
+.fb.on,.fb:hover{background:#1e3460;color:#c8d8f8;border-color:#3a6bc4}
+.sr{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid #111e35;font-size:10px;color:#c8d8f8}
+.sr .sd{color:#5a7ab8;font-size:9px;margin-top:2px}
+.stog{width:34px;height:18px;border-radius:9px;background:#1e3460;position:relative;cursor:pointer;transition:background .2s;flex-shrink:0}
+.stog.on{background:#2ecc71}
+.stog::after{content:'';position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:#fff;transition:left .2s}
+.stog.on::after{left:18px}
+.rc{background:#0f1e38;border:1px solid #1e3460;border-radius:6px;padding:12px}
+.rc h4{font-size:9px;color:#5a7ab8;letter-spacing:1px;text-transform:uppercase;margin-bottom:7px}
+.rs{display:flex;justify-content:space-between;padding:4px 0;font-size:10px;color:#c8d8f8;border-bottom:1px solid #111e35}
+.rs .rv{color:#7abaff;font-weight:700}
+</style>
+</head>
+<body>
+<div id="c"></div>
+
+<!-- ── static UI ── -->
+<div id="ui-overlay">
+  <h2>🔖 RFID Smart Bookshelf</h2>
+  <p>Interactive 3D model — 4-row intelligent library system with RFID book tracking.</p>
+  <hr/>
+  <p>🖱 <b>Left drag</b> – Orbit &nbsp;|&nbsp; <b>Right drag</b> – Pan<br/>
+     🖱 <b>Scroll</b> – Zoom &nbsp;|&nbsp; <b>Click</b> – Inspect<br/>
+     Each row has a PN5180 reader, antenna strip, and color label.<br/>
+     Books carry ISO 15693 RFID tags at 13.56 MHz.</p>
+</div>
+
+<div id="legend">
+  <h2>Component Legend</h2>
+  <div class="li"><div class="dot" style="background:#c8973a"></div>Wooden Cabinet</div>
+  <div class="li"><div class="dot" style="background:#6e9ef5"></div>RFID Antenna Strip</div>
+  <div class="li"><div class="dot" style="background:#2ecc71"></div>PN5180 RFID Reader ×4</div>
+  <div class="li"><div class="dot" style="background:#e74c3c"></div>ESP32 Controller</div>
+  <div class="li"><div class="dot" style="background:#f39c12"></div>12V Power Supply</div>
+  <div class="li"><div class="dot" style="background:#9b59b6"></div>SPI Wiring</div>
+  <div class="li"><div class="dot" style="background:#1abc9c"></div>Books (ISO 15693)</div>
+</div>
+
+<div id="bottom-bar">
+  <div class="sc"><div class="v">80</div><div class="l">Total Books</div></div>
+  <div class="sc"><div class="v" style="color:#2ecc71" id="bb-avail">72</div><div class="l">Available</div></div>
+  <div class="sc"><div class="v" style="color:#e74c3c" id="bb-mis">6</div><div class="l">Misplaced</div></div>
+  <div class="sc"><div class="v" style="color:#f39c12" id="bb-gone">2</div><div class="l">Missing</div></div>
+  <div class="sc"><div class="v">4</div><div class="l">Rows</div></div>
+  <div class="sc"><div class="v">13.56 MHz</div><div class="l">RFID Freq.</div></div>
+  <div class="sc"><div class="v">₱4,450</div><div class="l">Est. Cost</div></div>
+</div>
+
+<div id="tooltip"></div>
+<div id="plc"></div><!-- floating part labels -->
+
+<!-- ── right buttons ── -->
+<button id="toggle-ui-btn" onclick="toggleSW()">🖥 Software Interface</button>
+
+<button class="rbtn" id="scan-btn" onclick="startScan()">
+  <span class="ic">📡</span><span>SCAN BOOKS</span><div class="sdot"></div>
+</button>
+
+<button class="rbtn" id="explode-btn" onclick="toggleExplode()">
+  <span class="ic">💥</span><span id="explode-lbl">EXPLODE</span>
+</button>
+<div id="spread-wrap">
+  <label>SPREAD</label>
+  <input id="spread-slider" type="range" min="0" max="100" value="0" oninput="setSpread(this.value)"/>
+</div>
+
+<!-- ── row indicators ── -->
+<div id="ri">
+  <div class="rind" id="ri0" style="color:#4a90d9;border-color:#4a90d9"></div>
+  <div class="rind" id="ri1" style="color:#27ae60;border-color:#27ae60"></div>
+  <div class="rind" id="ri2" style="color:#e67e22;border-color:#e67e22"></div>
+  <div class="rind" id="ri3" style="color:#8e44ad;border-color:#8e44ad"></div>
+</div>
+
+<!-- ── scan log ── -->
+<div id="scan-log">
+  <h3><span class="sanim" id="spin" style="display:none">⚙</span> 📊 RFID Scan Results</h3>
+  <div id="pb-wrap"><div id="pb"></div></div>
+  <div id="se"></div>
+  <div id="sum">
+    <div class="si"><div class="sv" id="st" style="color:#7af">0</div><div class="sl">Scanned</div></div>
+    <div class="si"><div class="sv" id="sk" style="color:#2ecc71">0</div><div class="sl">Correct</div></div>
+    <div class="si"><div class="sv" id="sm" style="color:#e74c3c">0</div><div class="sl">Misplaced</div></div>
+    <div class="si"><div class="sv" id="sg" style="color:#f39c12">0</div><div class="sl">Missing</div></div>
+    <div class="si"><div class="sv" id="sp" style="color:#cde">0%</div><div class="sl">Accuracy</div></div>
+  </div>
+  <button id="closelog" onclick="closeLog()">✕ Close</button>
+</div>
+
+<!-- ── SOFTWARE INTERFACE PANEL ── -->
+<div id="sw-panel">
+  <div class="sw-title"><span></span><span>SOFTWARE INTERFACE (EXAMPLE)</span><button id="sw-close" onclick="toggleSW()">✕</button></div>
+  <div class="sw-body">
+    <div class="sw-sb">
+      <div class="sw-ni" id="nav-dash" onclick="swNav('dash')">⌂ Dashboard</div>
+      <div class="sw-ni" id="nav-books" onclick="swNav('books')">☰ Book List</div>
+      <div class="sw-ni" id="nav-scan" onclick="swNav('scan');startScanUI()">🔍 Scan Now</div>
+      <div class="sw-ni act" id="nav-mis" onclick="swNav('mis')">⚠ Misplaced Books</div>
+      <div class="sw-ni" id="nav-rep" onclick="swNav('rep')">◎ Reports</div>
+      <div class="sw-ni" id="nav-set" onclick="swNav('set')">⚙ Settings</div>
+    </div>
+    <div class="sw-main">
+      <div class="sw-stats">
+        <div class="sw-stat tot"><div class="sl">Total Books</div><div class="sv" id="sw-tot">80</div></div>
+        <div class="sw-stat av"><div class="sl">Available</div><div class="sv" id="sw-av">72</div></div>
+        <div class="sw-stat mp"><div class="sl">Misplaced</div><div class="sv" id="sw-mp">6</div></div>
+        <div class="sw-stat ms"><div class="sl">Missing</div><div class="sv" id="sw-ms">2</div></div>
+      </div>
+      <!-- Dashboard -->
+      <div class="sw-pg" id="pg-dash">
+        <div class="sw-sec">Dashboard</div>
+        <div class="dg">
+          <div class="dw"><h4>Books Per Row</h4>
+            <div class="rb"><span class="rl" style="color:#4a90d9">Row 1 – Math</span><div class="rt"><div class="rf" style="width:90%;background:#4a90d9"></div></div><span class="rc">18</span></div>
+            <div class="rb"><span class="rl" style="color:#27ae60">Row 2 – Sci</span><div class="rt"><div class="rf" style="width:85%;background:#27ae60"></div></div><span class="rc">17</span></div>
+            <div class="rb"><span class="rl" style="color:#e67e22">Row 3 – Lit</span><div class="rt"><div class="rf" style="width:95%;background:#e67e22"></div></div><span class="rc">19</span></div>
+            <div class="rb"><span class="rl" style="color:#8e44ad">Row 4 – Hist</span><div class="rt"><div class="rf" style="width:90%;background:#8e44ad"></div></div><span class="rc">18</span></div>
+          </div>
+          <div class="dw"><h4>Recent Activity</h4>
+            <div id="af">
+              <div class="ai"><span class="at">09:14</span><div class="ad" style="background:#2ecc71"></div><span>Scan completed – 80 books</span></div>
+              <div class="ai"><span class="at">09:13</span><div class="ad" style="background:#e74c3c"></div><span>B0007 misplaced detected</span></div>
+              <div class="ai"><span class="at">09:10</span><div class="ad" style="background:#f39c12"></div><span>B0033 reported missing</span></div>
+              <div class="ai"><span class="at">08:55</span><div class="ad" style="background:#2ecc71"></div><span>System powered on</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Book List -->
+      <div class="sw-pg" id="pg-books">
+        <div class="sw-sec">All Books</div>
+        <div class="fbr">
+          <button class="fb on" onclick="filterBooks('all',this)">All</button>
+          <button class="fb" onclick="filterBooks('ok',this)">✓ Correct</button>
+          <button class="fb" onclick="filterBooks('misplaced',this)">⚠ Misplaced</button>
+          <button class="fb" onclick="filterBooks('missing',this)">✕ Missing</button>
+        </div>
+        <div class="sw-tw"><table class="sw-t"><thead><tr><th>Book ID</th><th>Title</th><th>Expected Row</th><th>Detected Row</th><th>Status</th></tr></thead><tbody id="books-tb"></tbody></table></div>
+      </div>
+      <!-- Scan Now -->
+      <div class="sw-pg" id="pg-scan">
+        <div class="sw-sec">Scan Now</div>
+        <div style="background:#0f1e38;border:1px solid #1e3460;border-radius:6px;padding:14px;display:flex;flex-direction:column;gap:10px">
+          <div style="font-size:10px;color:#7a9ad8">Initiate a full RFID scan across all 4 rows. PN5180 readers poll each shelf at 13.56 MHz.</div>
+          <div id="ui-pb-wrap" style="background:#0d1930;border-radius:5px;height:9px;overflow:hidden;display:none"><div id="ui-pb" style="height:100%;background:linear-gradient(90deg,#2ecc71,#7af);width:0%;transition:width .3s;border-radius:5px"></div></div>
+          <div id="ui-msg" style="font-size:10px;color:#2ecc71;display:none">⚙ Scanning…</div>
+          <button onclick="startScanUI()" style="align-self:flex-start;background:linear-gradient(135deg,#0f4c2a,#1a7a40);border:1.5px solid #2ecc71;color:#fff;border-radius:5px;padding:7px 18px;font-size:11px;font-weight:700;cursor:pointer">📡 Start Scan</button>
+        </div>
+        <div class="sw-tw" id="scan-res-wrap" style="display:none"><table class="sw-t"><thead><tr><th>Book ID</th><th>Title</th><th>Expected Row</th><th>Detected Row</th><th>Status</th></tr></thead><tbody id="scan-res-tb"></tbody></table></div>
+      </div>
+      <!-- Misplaced -->
+      <div class="sw-pg act" id="pg-mis">
+        <div class="sw-sec">Misplaced Books</div>
+        <div class="sw-tw"><table class="sw-t"><thead><tr><th>Book ID</th><th>Book Title</th><th>Expected Row</th><th>Detected Row</th><th>Status</th></tr></thead>
+        <tbody id="mis-tb">
+          <tr><td>B0007</td><td>General Physics</td><td>2 (Science)</td><td>1 (Mathematics)</td><td><span class="swb mp">MISPLACED</span></td></tr>
+          <tr><td>B0016</td><td>The Great Gatsby</td><td>3 (Literature)</td><td>2 (Science)</td><td><span class="swb mp">MISPLACED</span></td></tr>
+          <tr><td>B0021</td><td>Philippine History</td><td>4 (History)</td><td>1 (Mathematics)</td><td><span class="swb mp">MISPLACED</span></td></tr>
+          <tr><td>B0033</td><td>Calculus</td><td>1 (Mathematics)</td><td>3 (Literature)</td><td><span class="swb mp">MISPLACED</span></td></tr>
+          <tr><td>B0044</td><td>World History</td><td>4 (History)</td><td>2 (Science)</td><td><span class="swb mp">MISPLACED</span></td></tr>
+          <tr><td>B0049</td><td>Biology Basics</td><td>2 (Science)</td><td>4 (History)</td><td><span class="swb mp">MISPLACED</span></td></tr>
+        </tbody></table></div>
+        <div class="sw-leg"><div><span class="lg">Green</span> = Correct Location</div><div><span class="lr">Red</span> = Misplaced</div><div><span class="ll">Gray</span> = Missing</div></div>
+      </div>
+      <!-- Reports -->
+      <div class="sw-pg" id="pg-rep">
+        <div class="sw-sec">Reports</div>
+        <div class="dg">
+          <div class="rc"><h4>Last Scan Summary</h4>
+            <div class="rs"><span>Scan Date</span><span class="rv" id="rpt-d">—</span></div>
+            <div class="rs"><span>Total Scanned</span><span class="rv" id="rpt-t">80</span></div>
+            <div class="rs"><span>Correct</span><span class="rv" id="rpt-ok" style="color:#2ecc71">72</span></div>
+            <div class="rs"><span>Misplaced</span><span class="rv" id="rpt-mp" style="color:#e74c3c">6</span></div>
+            <div class="rs"><span>Missing</span><span class="rv" id="rpt-ms" style="color:#888">2</span></div>
+            <div class="rs"><span>Accuracy</span><span class="rv" id="rpt-pc">90%</span></div>
+          </div>
+          <div class="rc"><h4>Row Health</h4>
+            <div class="rs"><span style="color:#4a90d9">Row 1 – Mathematics</span><span class="rv">90%</span></div>
+            <div class="rs"><span style="color:#27ae60">Row 2 – Science</span><span class="rv">85%</span></div>
+            <div class="rs"><span style="color:#e67e22">Row 3 – Literature</span><span class="rv">95%</span></div>
+            <div class="rs"><span style="color:#8e44ad">Row 4 – History</span><span class="rv">90%</span></div>
+          </div>
+        </div>
+      </div>
+      <!-- Settings -->
+      <div class="sw-pg" id="pg-set">
+        <div class="sw-sec">Settings</div>
+        <div class="sr"><div><div>Auto-Scan on Startup</div><div class="sd">Run scan when system powers on</div></div><div class="stog on" onclick="this.classList.toggle('on')"></div></div>
+        <div class="sr"><div><div>Sound Alerts</div><div class="sd">Play audio on misplaced detection</div></div><div class="stog" onclick="this.classList.toggle('on')"></div></div>
+        <div class="sr"><div><div>Wi-Fi Reporting</div><div class="sd">Send results via Wi-Fi to server</div></div><div class="stog on" onclick="this.classList.toggle('on')"></div></div>
+        <div class="sr"><div><div>Scan Interval</div><div class="sd">Auto-rescan frequency</div></div>
+          <select style="background:#0f1e38;border:1px solid #1e3460;color:#c8d8f8;border-radius:4px;padding:3px 7px;font-size:10px">
+            <option>Every 5 min</option><option>Every 15 min</option><option>Every 30 min</option><option>Manual only</option>
+          </select>
+        </div>
+        <div class="sr"><div><div>RFID Frequency</div><div class="sd">Operating freq of PN5180 readers</div></div><span style="color:#7abaff;font-size:10px;font-weight:700">13.56 MHz (fixed)</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+try {
+
+// ════════════════════════════════════════════════════════════════
+//  SCENE SETUP
+// ════════════════════════════════════════════════════════════════
+const container = document.getElementById('c');
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0d0d1e);
+scene.fog = new THREE.Fog(0x0d0d1e, 30, 80);
+
+const camera = new THREE.PerspectiveCamera(45, innerWidth/innerHeight, 0.1, 200);
+camera.position.set(8, 6, 14);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(devicePixelRatio);
+renderer.setSize(innerWidth, innerHeight);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+container.appendChild(renderer.domElement);
+
+const controls = new THREE.OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true; controls.dampingFactor = 0.07;
+controls.minDistance = 3; controls.maxDistance = 40;
+controls.target.set(0, 3, 0);
+
+// lights
+const ambient = new THREE.AmbientLight(0xffffff, 0.35); scene.add(ambient);
+const dirLight = new THREE.DirectionalLight(0xfff5e0, 1.2);
+dirLight.position.set(8,14,10); dirLight.castShadow = true;
+dirLight.shadow.mapSize.set(2048,2048);
+Object.assign(dirLight.shadow.camera, {near:.5,far:60,left:-15,right:15,top:15,bottom:-5});
+scene.add(dirLight);
+const fillLight = new THREE.DirectionalLight(0x8899ff, .5);
+fillLight.position.set(-8, 5, -5);
+scene.add(fillLight);
+scene.add(new THREE.GridHelper(30,30,0x223355,0x112244));
+
+// materials
+const M = {
+  wood:     new THREE.MeshStandardMaterial({color:0xc8973a,roughness:.8,metalness:.05}),
+  dwood:    new THREE.MeshStandardMaterial({color:0x8b5e3c,roughness:.85}),
+  shelf:    new THREE.MeshStandardMaterial({color:0xd4a44c,roughness:.7,metalness:.1}),
+  pcb:      new THREE.MeshStandardMaterial({color:0x1a472a,roughness:.6,metalness:.2}),
+  chip:     new THREE.MeshStandardMaterial({color:0x222222,roughness:.4,metalness:.5}),
+  ant:      new THREE.MeshStandardMaterial({color:0x3a7fd4,roughness:.5,metalness:.6,emissive:0x0a1a44}),
+  esp:      new THREE.MeshStandardMaterial({color:0x1a3a1a,roughness:.5,metalness:.3}),
+  psu:      new THREE.MeshStandardMaterial({color:0x2a2a2a,roughness:.5,metalness:.7}),
+  metal:    new THREE.MeshStandardMaterial({color:0x888888,roughness:.3,metalness:.9}),
+  glass:    new THREE.MeshStandardMaterial({color:0x88ccff,roughness:.1,transparent:true,opacity:.18}),
+  foot:     new THREE.MeshStandardMaterial({color:0x6b4226,roughness:.9}),
+  drawer:   new THREE.MeshStandardMaterial({color:0xb8882e,roughness:.75}),
+  handle:   new THREE.MeshStandardMaterial({color:0xb0860a,roughness:.3,metalness:.8}),
+  bb:       new THREE.MeshStandardMaterial({color:0xf5f5dc,roughness:.8}),
+  gold:     new THREE.MeshStandardMaterial({color:0xffd700,metalness:1,roughness:.1}),
+  tag:      new THREE.MeshStandardMaterial({color:0xffffff,emissive:0xffffff,emissiveIntensity:.6}),
+};
+
+const ROW_COLORS = [0x4a90d9,0x27ae60,0xe67e22,0x8e44ad];
+const ROW_NAMES  = ['ROW 1 – MATHEMATICS','ROW 2 – SCIENCE','ROW 3 – LITERATURE','ROW 4 – HISTORY'];
+const BOOK_PAL   = [0xc0392b,0xe74c3c,0x16a085,0x1abc9c,0x2980b9,0x3498db,0x8e44ad,0x9b59b6,0xf39c12,0xe67e22,0x27ae60,0x2ecc71,0xd35400,0x7f8c8d,0x2c3e50,0x34495e];
+
+const clickables = [];
+function B(w,h,d,mat,x,y,z){
+  const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);
+  m.position.set(x,y,z); m.castShadow=true; m.receiveShadow=true; return m;
+}
+
+// ════════════════════════════════════════════════════════════════
+//  CABINET  (W=7, H=9.5, D=2)
+// ════════════════════════════════════════════════════════════════
+const CW=7, CH=9.5, CD=2, WL=0.15;
+const cabinetGroup = new THREE.Group();
+
+cabinetGroup.add(B(CW,CH,.08,M.dwood,0,CH/2,-CD/2+.04));        // back
+cabinetGroup.add(B(WL,CH,CD,M.wood,-CW/2+WL/2,CH/2,0));        // left wall
+cabinetGroup.add(B(WL,CH,CD,M.wood,CW/2-WL/2,CH/2,0));         // right wall
+cabinetGroup.add(B(CW,WL,CD,M.wood,0,CH-WL/2,0));              // top
+cabinetGroup.add(B(CW,WL,CD,M.wood,0,WL/2,0));                 // bottom
+cabinetGroup.add(B(CW+.1,.12,CD+.1,M.shelf,0,CH+.06,0));       // crown
+cabinetGroup.add(B(CW+.1,.2,CD+.15,M.shelf,0,.1,0));           // base
+[[-CW/2+.3,-CD/2+.3],[CW/2-.3,-CD/2+.3],[-CW/2+.3,CD/2-.3],[CW/2-.3,CD/2-.3]]
+  .forEach(([fx,fz])=>cabinetGroup.add(B(.2,.35,.2,M.foot,fx,-.175,fz)));
+
+// drawer front panel + handles
+cabinetGroup.add(B(CW-WL*2-.1,1.3,.1,M.drawer,0,1.05,CD/2-.05));
+cabinetGroup.add(B(1,.08,.08,M.handle,0,1.05,CD/2+.01));
+cabinetGroup.add(B(.8,.08,.08,M.handle,-1.5,1.05,CD/2+.01));
+cabinetGroup.add(B(.8,.08,.08,M.handle,1.5,1.05,CD/2+.01));
+cabinetGroup.add(B(.04,1.3,.12,M.dwood,0,1.05,CD/2-.04));
+
+// row color label strips (left interior)
+const ROW_BOT = [1.97,3.57,5.17,6.77];
+ROW_COLORS.forEach((col,i)=>{
+  const mat=new THREE.MeshStandardMaterial({color:col,emissive:col,emissiveIntensity:.3,roughness:.7});
+  const strip=B(.08,1.5,.04,mat,-CW/2+WL+.04,ROW_BOT[i]+.75,CD/2-.08);
+  strip.userData.label=ROW_NAMES[i]; clickables.push(strip);
+  cabinetGroup.add(strip);
+});
+
+scene.add(cabinetGroup);
+
+// ════════════════════════════════════════════════════════════════
+//  SHELVES (separate group, NOT child of cabinetGroup)
+// ════════════════════════════════════════════════════════════════
+const shelfGroup = new THREE.Group();
+[.3,1.9,3.5,5.1,6.7].forEach(sy=>{
+  shelfGroup.add(B(CW-WL*2,.12,CD-.04,M.shelf,0,sy,0));
+  shelfGroup.add(B(CW-WL*2,.08,.06,M.dwood,0,sy+.1,CD/2-.03));
+});
+shelfGroup.add(B(CW-WL*2,.06,CD-.04,M.dwood,0,1.85,0)); // compartment divider
+scene.add(shelfGroup);
+
+// ════════════════════════════════════════════════════════════════
+//  BOOKS (4 groups, one per row)
+// ════════════════════════════════════════════════════════════════
+const ROW_SHELF_Y = [1.97,3.57,5.17,6.77];
+const bookGroups  = [];  // declared BEFORE use
+const bookMeshes  = [];
+
+ROW_SHELF_Y.forEach((sy,ri)=>{
+  const grp = new THREE.Group();
+  const n=20, bw=(CW-WL*2-.3)/n, bh=1.3, bd=.5;
+  const sx=-CW/2+WL+.15+bw/2;
+  for(let b=0;b<n;b++){
+    const col=BOOK_PAL[(ri*n+b)%BOOK_PAL.length];
+    const bMat=new THREE.MeshStandardMaterial({color:col,roughness:.85});
+    const hv=bh*(.88+Math.random()*.18);
+    const bx=sx+b*bw, by=sy+.06+hv/2;
+    const bm=B(bw*.88,hv,bd,bMat,bx,by,-CD/2+.04+bd/2+.08);
+    bm.userData.label=`Book #${ri*n+b+1} | ${ROW_NAMES[ri]} | ISO 15693 Tag`;
+    clickables.push(bm);
+    bookMeshes.push(bm);
+    grp.add(bm);
+    grp.add(B(bw*.3,.04,.01,M.tag,bx,by-hv*.2,-CD/2+.04+bd+.09));
+  }
+  bookGroups.push(grp);
+  scene.add(grp);
+});
+bookMeshes.forEach(bm=>{ bm.userData.origColor=bm.material.color.getHex(); });
+
+// ════════════════════════════════════════════════════════════════
+//  ANTENNAS
+// ════════════════════════════════════════════════════════════════
+const antennaGroup = new THREE.Group();
+ROW_SHELF_Y.forEach((sy,i)=>{
+  const ant=B(CW-WL*2-.2,.08,.35,M.ant,0,sy+.75,-CD/2+.22);
+  ant.userData.label=`PN5180 Antenna #${i+1} – Row ${i+1} | 13.56 MHz | Reading Zone`;
+  clickables.push(ant); antennaGroup.add(ant);
+  for(let l=0;l<5;l++){
+    const lg=new THREE.TorusGeometry(.12,.01,8,24);
+    const lm=new THREE.Mesh(lg,new THREE.MeshStandardMaterial({color:0xf0c040,metalness:.9,roughness:.2}));
+    lm.position.set(-2.5+l*1.2,sy+.75,-CD/2+.22); lm.rotation.y=Math.PI/2;
+    antennaGroup.add(lm);
+  }
+  const lc=[0x00ff77,0x00ff77,0xffaa00,0x00ff77][i];
+  const lm=new THREE.MeshStandardMaterial({color:lc,emissive:lc,emissiveIntensity:1.5});
+  antennaGroup.add(B(.05,.05,.04,lm,CW/2-WL-.25,sy+.75,-CD/2+.25));
+});
+scene.add(antennaGroup);
+
+// ════════════════════════════════════════════════════════════════
+//  PN5180 READER BOARDS
+// ════════════════════════════════════════════════════════════════
+const pn5180Group = new THREE.Group();
+ROW_SHELF_Y.forEach((sy,i)=>{
+  const rx=CW/2-WL-.55;
+  const pcb=B(.85,.55,.06,M.pcb,rx,sy+.4,-CD/2+.5);
+  pcb.userData.label=`PN5180 #${i+1} | Row ${i+1} | SPI: SCK/MOSI/MISO/SS | 13.56 MHz`;
+  clickables.push(pcb); pn5180Group.add(pcb);
+  pn5180Group.add(B(.22,.22,.04,M.chip,rx,sy+.44,-CD/2+.54));
+  for(let c=0;c<6;c++){
+    const cm=new THREE.MeshStandardMaterial({color:c%2===0?0x333333:0x8b0000,roughness:.5});
+    pn5180Group.add(B(.05,.04,.04,cm,rx-.28+(c%3)*.18,sy+.28+Math.floor(c/3)*.14,-CD/2+.54));
+  }
+  for(let p=0;p<8;p++) pn5180Group.add(B(.03,.08,.02,M.gold,rx-.35+p*.1,sy+.22,-CD/2+.5));
+  const sl=new THREE.MeshStandardMaterial({color:0x00aaff,emissive:0x00aaff,emissiveIntensity:1.2});
+  pn5180Group.add(B(.05,.05,.04,sl,rx+.3,sy+.55,-CD/2+.52));
+});
+scene.add(pn5180Group);
+
+// SPI wires
+const wireColors=[0xff6b6b,0xffd93d,0x6bcb77,0x4d96ff];
+for(let i=0;i<4;i++) for(let w=0;w<4;w++){
+  const wm=new THREE.MeshStandardMaterial({color:wireColors[w],roughness:.7});
+  const wire=new THREE.Mesh(new THREE.CylinderGeometry(.012,.012,1.6,6),wm);
+  wire.position.set(CW/2-WL-.12-w*.035,ROW_SHELF_Y[i]+.4,-CD/2+.45);
+  wire.rotation.x=Math.PI/2; scene.add(wire);
+}
+
+// ════════════════════════════════════════════════════════════════
+//  ELECTRONICS COMPARTMENT
+// ════════════════════════════════════════════════════════════════
+const elecGroup = new THREE.Group();
+elecGroup.add(B(CW-WL*2-.1,1.4,.06,M.glass,0,1.05,CD/2-.07));
+
+// ESP32
+const esp32=B(.7,.3,.06,M.esp,-1.8,.8,-CD/2+.6);
+esp32.userData.label='ESP32 DevKit V1 | Xtensa LX6 240MHz | 520KB RAM | Wi-Fi 802.11b/g/n | SPI bus master';
+clickables.push(esp32); elecGroup.add(esp32);
+elecGroup.add(B(.18,.06,.04,new THREE.MeshStandardMaterial({color:0x333,metalness:.3}),-1.58,.95,-CD/2+.6));
+elecGroup.add(B(.2,.2,.04,M.chip,-1.8,.82,-CD/2+.64));
+for(let p=0;p<10;p++){
+  elecGroup.add(B(.03,.06,.02,M.gold,-2.1+p*.067,.67,-CD/2+.59));
+  elecGroup.add(B(.03,.06,.02,M.gold,-2.1+p*.067,.96,-CD/2+.59));
+}
+elecGroup.add(B(.12,.07,.06,M.metal,-1.45,.79,-CD/2+.57)); // USB
+
+// PSU
+const psu=B(1.1,.55,.85,M.psu,1.5,.75,-CD/2+.55);
+psu.userData.label='12V 3A PSU | Input AC 100–240V | Output DC 12V@3A | 36W | OVP/OCP/SCP';
+clickables.push(psu); elecGroup.add(psu);
+const fan=new THREE.Mesh(new THREE.CircleGeometry(.18,24),new THREE.MeshStandardMaterial({color:0x111,side:THREE.DoubleSide}));
+fan.position.set(1.5,.75,-CD/2+.98); elecGroup.add(fan);
+for(let f=0;f<6;f++){const bl=B(.28,.035,.01,M.metal,1.5,.75,-CD/2+.99);bl.rotation.z=(f/6)*Math.PI;elecGroup.add(bl);}
+elecGroup.add(B(.12,.1,.06,M.metal,1.1,.75,-CD/2+.58));
+for(let j=0;j<4;j++) elecGroup.add(B(.07,.07,.07,M.metal,.8+j*.12,.52,-CD/2+.59));
+
+// breadboard
+elecGroup.add(B(1.2,.08,.6,M.bb,-.2,.6,-CD/2+.6));
+for(let br=0;br<6;br++) for(let bc=0;bc<12;bc++)
+  elecGroup.add(B(.04,.09,.04,new THREE.MeshStandardMaterial({color:0x888}),-.75+bc*.115,.645,-CD/2+.37+br*.085));
+
+scene.add(elecGroup);
+
+// ════════════════════════════════════════════════════════════════
+//  CANVAS-TEXTURE SPRITE LABELS (shown during explode)
+// ════════════════════════════════════════════════════════════════
+function makeSprite(lines, bgCol, borderCol, scale){
+  const cv=document.createElement('canvas');
+  cv.width=340; cv.height=lines.length*28+18;
+  const ctx=cv.getContext('2d');
+  // manual rounded rect (compatible with all browsers)
+  const x=2,y=2,w=cv.width-4,h=cv.height-4,r=8;
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);
+  ctx.lineTo(x+w-r,y); ctx.quadraticCurveTo(x+w,y,x+w,y+r);
+  ctx.lineTo(x+w,y+h-r); ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+  ctx.lineTo(x+r,y+h); ctx.quadraticCurveTo(x,y+h,x,y+h-r);
+  ctx.lineTo(x,y+r); ctx.quadraticCurveTo(x,y,x+r,y);
+  ctx.closePath();
+  ctx.fillStyle=bgCol; ctx.fill();
+  ctx.strokeStyle=borderCol; ctx.lineWidth=3; ctx.stroke();
+  lines.forEach((ln,i)=>{
+    ctx.font=i===0?'bold 17px monospace':'13px monospace';
+    ctx.fillStyle=i===0?borderCol:'#c8d8f8';
+    ctx.fillText(ln,12,22+i*26);
+  });
+  const spr=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(cv),transparent:true,depthTest:false}));
+  spr.scale.set(scale*(cv.width/cv.height),scale,1);
+  spr.visible=false;
+  return spr;
+}
+
+// ESP32 detail card
+const esp32Spr=makeSprite(['ESP32 DevKit V1','CPU: Xtensa LX6 @ 240 MHz','RAM: 520 KB SRAM','Flash: 4 MB','Wi-Fi: 802.11 b/g/n 2.4GHz','BT: Classic + BLE 4.2','SPI: SCK/MOSI/MISO/SS','GPIO: 34 pins | Cost: ₱350'],'rgba(10,30,10,.93)','#2ecc71',2.4);
+esp32Spr.position.set(-4.2,2,.3); elecGroup.add(esp32Spr);
+
+// PSU detail card
+const psuSpr=makeSprite(['12V 3A Power Supply','Input: AC 100–240 V','Output: DC 12 V @ 3 A','Power: 36 W','Efficiency: >80%','OVP / OCP / SCP','Connectors: 4× DC barrel','Cost: ₱400'],'rgba(30,10,5,.93)','#f39c12',2.4);
+psuSpr.position.set(4.2,2,.3); elecGroup.add(psuSpr);
+
+// PN5180 cards
+const PN_PINS=[['SS=5','IRQ=4','RST=2'],['SS=15','IRQ=33','RST=27'],['SS=21','IRQ=32','RST=26'],['SS=22','IRQ=35','RST=25']];
+ROW_SHELF_Y.forEach((sy,i)=>{
+  const spr=makeSprite([`PN5180A0HN/C2 — Reader #${i+1}`,'NXP ISO 15693 / ISO 18000-3','Freq: 13.56 MHz','Interface: SPI up to 7 MHz','Supply: 3.3 V','Range: 2–5 cm (antenna-dep.)',`SPI: SCK=18 MOSI=23 MISO=19`,PN_PINS[i].join('  ')],'rgba(10,25,15,.93)','#2ecc71',2.2);
+  spr.position.set(6,sy+.5,-.5);
+  pn5180Group.add(spr);
+});
+
+// Antenna cards
+ROW_SHELF_Y.forEach((sy,i)=>{
+  const spr=makeSprite([`Antenna Row ${i+1} — ${['Mathematics','Science','Literature','History'][i]}`,'Type: Planar rectangular coil','Freq: 13.56 MHz (ISO 15693)','Field: NFC / RFID read zone','Coverage: full shelf width ~60 cm',`Drives: PN5180 Reader #${i+1}`],'rgba(10,12,35,.93)','#4a90d9',2.2);
+  spr.position.set(-6,sy+.9,-.2);
+  antennaGroup.add(spr);
+});
+
+// Cabinet card
+const cabSpr=makeSprite(['Wooden Bookshelf Cabinet','Material: Solid Oak + MDF','Dimensions: 120 × 180 × 40 cm','Rows: 4  |  Shelves: 5','Load per shelf: 20 kg','Finish: Honey Oak veneer','Electronics bay: bottom drawer','Cost: ₱1,300'],'rgba(28,18,5,.93)','#c8973a',2.6);
+cabSpr.position.set(0,11.8,0); cabinetGroup.add(cabSpr);
+
+// ════════════════════════════════════════════════════════════════
+//  RFID RINGS + PARTICLES + FLOOR
+// ════════════════════════════════════════════════════════════════
+const rfidRings=[];
+ROW_SHELF_Y.forEach((sy,i)=>{
+  for(let r=0;r<3;r++){
+    const rg=new THREE.RingGeometry(.2+r*.18,.24+r*.18,32);
+    const rm=new THREE.MeshBasicMaterial({color:ROW_COLORS[i],transparent:true,opacity:.55-r*.15,side:THREE.DoubleSide});
+    const ring=new THREE.Mesh(rg,rm);
+    ring.position.set(-CW/2+WL+.3,sy+.75,CD/2+.05);
+    ring.userData.phase=(i*Math.PI/2)+r*.8;
+    rfidRings.push(ring); scene.add(ring);
+  }
+});
+
+const pPos=new Float32Array(120*3);
+for(let p=0;p<120;p++){pPos[p*3]=(Math.random()-.5)*CW;pPos[p*3+1]=.5+Math.random()*CH;pPos[p*3+2]=(Math.random()-.5)*CD;}
+const particleGeo=new THREE.BufferGeometry(); particleGeo.setAttribute('position',new THREE.BufferAttribute(pPos,3));
+const particles=new THREE.Points(particleGeo,new THREE.PointsMaterial({color:0x7adfff,size:.04,transparent:true,opacity:.5}));
+scene.add(particles);
+
+const floor=new THREE.Mesh(new THREE.PlaneGeometry(40,40),new THREE.MeshStandardMaterial({color:0x111122,roughness:1}));
+floor.rotation.x=-Math.PI/2; floor.position.y=-.01; floor.receiveShadow=true; scene.add(floor);
+
+// ════════════════════════════════════════════════════════════════
+//  EXPLODE SYSTEM
+//  Each part: { obj, homePos, dir, labelEl }
+//  homePos = position at scene build time
+// ════════════════════════════════════════════════════════════════
+const explodeParts = [];
+let explodeT  = 0;   // current amount 0–1
+let explodeTgt= 0;   // target
+const EMAX    = 6;   // max displacement units
+
+const plc = document.getElementById('plc');
+
+function makeLabelEl(text, hexColor){
+  const el=document.createElement('div');
+  el.className='pl';
+  el.textContent=text;
+  const css='#'+hexColor.toString(16).padStart(6,'0');
+  el.style.borderColor=css; el.style.color=css;
+  plc.appendChild(el); return el;
+}
+
+function regPart(obj, dx, dy, dz, label, col){
+  explodeParts.push({
+    obj,
+    home: obj.position.clone(),
+    dir:  new THREE.Vector3(dx,dy,dz).normalize(),
+    labelEl: makeLabelEl(label, col)
+  });
+}
+
+// Register parts AFTER scene objects have been positioned
+regPart(cabinetGroup, 0, 0,-1.2, 'Cabinet Shell  |  Oak + MDF  |  ₱1,300',    0xc8973a);
+regPart(shelfGroup,   0,.4, 1.0, 'MDF Shelves ×5  |  18 mm thick',             0xd4a44c);
+regPart(antennaGroup, 0, 0, 2.8, 'RFID Antennas ×4  |  13.56 MHz coil strips', 0x3a7fd4);
+regPart(pn5180Group,  2, 0, 1.5, 'PN5180 Readers ×4  |  NXP ISO 15693',        0x2ecc71);
+regPart(elecGroup,    0,-2, 1.8, 'Electronics Bay  |  ESP32 + PSU + BB',       0xf39c12);
+bookGroups.forEach((bg,i)=>{
+  const cols=[0xc0392b,0x16a085,0x8e44ad,0xe67e22];
+  regPart(bg, 0, .5*(i-1.5), 3+i*.4, `Row ${i+1} Books ×20  |  ISO 15693 tags`, cols[i]);
+});
+
+// Utility: world pos → screen pos
+function toScreen(wp){
+  const v=wp.clone().project(camera);
+  return { x:(v.x*.5+.5)*innerWidth, y:(-v.y*.5+.5)*innerHeight, behind:v.z>1 };
+}
+
+function updateExplode(){
+  explodeT += (explodeTgt-explodeT)*.06;
+  explodeParts.forEach(p=>{
+    p.obj.position.copy(p.home).addScaledVector(p.dir, explodeT*EMAX);
+  });
+
+  // toggle sprite labels
+  scene.traverse(obj=>{
+    if(!obj.isSprite) return;
+    obj.visible=explodeT>.04;
+    if(obj.material) obj.material.opacity=Math.min(1,(explodeT-.04)*5);
+  });
+
+  // move CSS overlay labels
+  explodeParts.forEach(p=>{
+    const el=p.labelEl;
+    if(explodeT<.08){ el.style.display='none'; return; }
+    const box3=new THREE.Box3().setFromObject(p.obj);
+    const cen=new THREE.Vector3(); box3.getCenter(cen);
+    const sc=toScreen(cen);
+    if(sc.behind){ el.style.display='none'; return; }
+    el.style.display='block';
+    el.style.left=sc.x+'px';
+    el.style.top =sc.y+'px';
+    el.style.opacity=Math.min(1,(explodeT-.08)*6).toString();
+  });
+}
+
+function toggleExplode(){
+  const on = explodeTgt===0;
+  explodeTgt = on ? 1 : 0;
+  const btn=document.getElementById('explode-btn');
+  const lbl=document.getElementById('explode-lbl');
+  const sw=document.getElementById('spread-wrap');
+  if(on){ btn.classList.add('on'); lbl.textContent='COLLAPSE'; sw.style.display='flex'; document.getElementById('spread-slider').value=100; }
+  else  { btn.classList.remove('on'); lbl.textContent='EXPLODE'; sw.style.display='none'; document.getElementById('spread-slider').value=0; }
+}
+
+function setSpread(v){
+  explodeTgt=v/100;
+  const btn=document.getElementById('explode-btn'), lbl=document.getElementById('explode-lbl');
+  if(v>0){ btn.classList.add('on'); lbl.textContent='COLLAPSE'; }
+  else   { btn.classList.remove('on'); lbl.textContent='EXPLODE'; }
+}
+
+// ════════════════════════════════════════════════════════════════
+//  RAYCASTER
+// ════════════════════════════════════════════════════════════════
+const raycaster=new THREE.Raycaster(), mouse=new THREE.Vector2();
+const tooltip=document.getElementById('tooltip');
+window.addEventListener('click',e=>{
+  if(e.target!==renderer.domElement) return;
+  mouse.x=(e.clientX/innerWidth)*2-1;
+  mouse.y=-(e.clientY/innerHeight)*2+1;
+  raycaster.setFromCamera(mouse,camera);
+  const hits=raycaster.intersectObjects(clickables);
+  if(hits.length){
+    tooltip.textContent='🔍 '+hits[0].object.userData.label;
+    tooltip.style.display='block';
+    clearTimeout(tooltip._t);
+    tooltip._t=setTimeout(()=>tooltip.style.display='none',4000);
+  }
+});
+
+// ════════════════════════════════════════════════════════════════
+//  SCAN SIMULATION
+// ════════════════════════════════════════════════════════════════
+let scanRunning=false, scanData=[], scanIdx=0, scanCnts={}, scanTimer=null;
+
+function genScanData(){
+  const titles=['Calculus Vol.1','General Physics','World History','The Great Gatsby','Biology Basics','Algebra 2','Chemistry 101','Philippine History','Literature Anthology','Trigonometry','Earth Science','Novel Studies','Discrete Math','Organic Chem','Ancient Civilizations','Poetry Works','Linear Algebra','Thermodynamics','Modern Fiction','Medieval History'];
+  const out=[];
+  for(let r=0;r<4;r++) for(let b=0;b<20;b++){
+    const roll=Math.random(), exp=r+1; let st,det;
+    if(roll<.06){st='MISSING';det=null;}
+    else if(roll<.13){st='MISPLACED';let w=exp;while(w===exp)w=Math.floor(Math.random()*4)+1;det=w;}
+    else{st='OK';det=exp;}
+    out.push({bookId:`B${String(r*20+b+1).padStart(4,'0')}`,row:r,expectedRow:exp,title:titles[(r*20+b)%titles.length]+` #${b+1}`,status:st,detectedRow:det});
+  }
+  return out;
+}
+
+function resetColors(){
+  bookMeshes.forEach(bm=>{bm.material.color.setHex(bm.userData.origColor);bm.material.emissive.setHex(0);bm.material.emissiveIntensity=0;});
+}
+
+function startScan(){
+  if(scanRunning) return;
+  scanRunning=true;
+  const btn=document.getElementById('scan-btn');
+  btn.disabled=true;
+  btn.innerHTML='<span class="ic">⚙</span><span>SCANNING…</span><div class="sdot" style="background:#f39c12;box-shadow:0 0 7px #f39c12"></div>';
+  resetColors();
+  scanData=genScanData(); scanIdx=0;
+  scanCnts={total:0,ok:0,miss:0,gone:0};
+  const log=document.getElementById('scan-log');
+  log.style.display='flex';
+  document.getElementById('se').innerHTML='';
+  document.getElementById('pb').style.width='0%';
+  document.getElementById('spin').style.display='inline-block';
+  ['st','sk','sm','sg','sp'].forEach(id=>document.getElementById(id).textContent='0');
+  for(let i=0;i<4;i++){document.getElementById(`ri${i}`).style.background='#111';document.getElementById(`ri${i}`).classList.remove('on');}
+  processBook();
+}
+
+function processBook(){
+  if(scanIdx>=scanData.length){finishScan();return;}
+  const {bookId,row,expectedRow,title,status,detectedRow}=scanData[scanIdx];
+  for(let i=0;i<4;i++){
+    const el=document.getElementById(`ri${i}`);
+    if(i===row){el.style.background=['#4a90d9','#27ae60','#e67e22','#8e44ad'][row];el.classList.add('on');}
+    else{el.style.background='#111';el.classList.remove('on');}
+  }
+  const bm=bookMeshes[scanIdx];
+  if(bm){
+    if(status==='OK'){bm.material.emissive.setHex(0x00ff44);bm.material.emissiveIntensity=.6;}
+    else if(status==='MISPLACED'){bm.material.color.setHex(0xff2222);bm.material.emissive.setHex(0xff0000);bm.material.emissiveIntensity=.8;}
+    else{bm.material.color.setHex(0x222222);bm.material.emissiveIntensity=0;}
+  }
+  scanCnts.total++;
+  if(status==='OK')scanCnts.ok++;
+  else if(status==='MISPLACED')scanCnts.miss++;
+  else scanCnts.gone++;
+  const pct=Math.round(scanCnts.ok/scanCnts.total*100);
+  document.getElementById('st').textContent=scanCnts.total;
+  document.getElementById('sk').textContent=scanCnts.ok;
+  document.getElementById('sm').textContent=scanCnts.miss;
+  document.getElementById('sg').textContent=scanCnts.gone;
+  document.getElementById('sp').textContent=pct+'%';
+  document.getElementById('pb').style.width=((scanIdx+1)/scanData.length*100)+'%';
+  if(status!=='OK'||(scanIdx%5===0)){
+    const se=document.getElementById('se'), d=document.createElement('div');
+    d.className='se-row';
+    const bc=status==='OK'?'ok':status==='MISPLACED'?'miss':'gone';
+    const bt=status==='OK'?'✓ OK':status==='MISPLACED'?'⚠ MISPLACED':'✕ MISSING';
+    const info=status==='MISPLACED'?`Expected Row ${expectedRow} → Row ${detectedRow}`:status==='MISSING'?`Expected Row ${expectedRow} → Not found`:`Row ${detectedRow} – Correct`;
+    d.innerHTML=`<span class="bdg ${bc}">${bt}</span><span class="bid">${bookId}</span><span class="inf">${title} — ${info}</span>`;
+    se.appendChild(d); se.scrollTop=se.scrollHeight;
+  }
+  scanIdx++;
+  scanTimer=setTimeout(processBook,60);
+}
+
+function finishScan(){
+  scanRunning=false;
+  document.getElementById('spin').style.display='none';
+  const btn=document.getElementById('scan-btn');
+  btn.disabled=false;
+  btn.innerHTML='<span class="ic">📡</span><span>SCAN AGAIN</span><div class="sdot"></div>';
+  for(let i=0;i<4;i++){document.getElementById(`ri${i}`).style.background='#111';document.getElementById(`ri${i}`).classList.remove('on');}
+  document.getElementById('bb-avail').textContent=scanCnts.ok;
+  document.getElementById('bb-mis').textContent=scanCnts.miss;
+  document.getElementById('bb-gone').textContent=scanCnts.gone;
+  const pct=Math.round(scanCnts.ok/scanCnts.total*100);
+  const se=document.getElementById('se'),d=document.createElement('div');
+  d.style.cssText='padding:7px;border-radius:5px;background:rgba(46,204,113,.1);border:1px solid #2ecc71;margin-top:5px;font-size:10px;color:#2ecc71;text-align:center';
+  d.textContent=`✅ Scan complete — ${scanCnts.total} books | Accuracy: ${pct}% | ${scanCnts.miss} misplaced | ${scanCnts.gone} missing`;
+  se.appendChild(d); se.scrollTop=se.scrollHeight;
+  document.getElementById('pb').style.width='100%';
+  swBookData=scanData.map(d=>({...d}));
+}
+
+function closeLog(){
+  document.getElementById('scan-log').style.display='none';
+  resetColors();
+}
+
+// ════════════════════════════════════════════════════════════════
+//  SOFTWARE INTERFACE PANEL
+// ════════════════════════════════════════════════════════════════
+let swBookData=[];
+
+function toggleSW(){
+  const p=document.getElementById('sw-panel');
+  const showing=p.style.display==='flex';
+  p.style.display=showing?'none':'flex';
+  if(!showing){ swNav('mis'); refreshBooks(); }
+}
+
+function swNav(pg){
+  document.querySelectorAll('.sw-ni').forEach(el=>el.classList.remove('act'));
+  document.querySelectorAll('.sw-pg').forEach(el=>el.classList.remove('act'));
+  const ni=document.getElementById('nav-'+pg), pp=document.getElementById('pg-'+pg);
+  if(ni) ni.classList.add('act');
+  if(pp) pp.classList.add('act');
+}
+
+function getDefBooks(){
+  const titles=['Calculus Vol.1','General Physics','World History','The Great Gatsby','Biology Basics','Algebra 2','Chemistry 101','Philippine History','Literature Anthology','Trigonometry','Earth Science','Novel Studies','Discrete Math','Organic Chem','Ancient Civilizations','Poetry Works','Linear Algebra','Thermodynamics','Modern Fiction','Medieval History'];
+  const data=[];
+  for(let r=0;r<4;r++) for(let b=0;b<20;b++) data.push({bookId:`B${String(r*20+b+1).padStart(4,'0')}`,title:titles[(r*20+b)%titles.length]+` #${b+1}`,row:r,expectedRow:r+1,status:'OK',detectedRow:r+1});
+  [{id:'B0007',s:'MISPLACED',det:1},{id:'B0016',s:'MISPLACED',det:2},{id:'B0021',s:'MISPLACED',det:1},{id:'B0033',s:'MISPLACED',det:3},{id:'B0044',s:'MISPLACED',det:2},{id:'B0049',s:'MISPLACED',det:4},{id:'B0015',s:'MISSING',det:null},{id:'B0060',s:'MISSING',det:null}]
+    .forEach(s=>{const f=data.find(d=>d.bookId===s.id);if(f){f.status=s.s;f.detectedRow=s.det;}});
+  return data;
+}
+
+function refreshBooks(filter='all'){
+  const tb=document.getElementById('books-tb'); if(!tb) return;
+  const src=swBookData.length?swBookData:getDefBooks();
+  tb.innerHTML='';
+  const rn=['1 (Mathematics)','2 (Science)','3 (Literature)','4 (History)'];
+  src.forEach(b=>{
+    if(filter!=='all'&&b.status.toLowerCase()!==filter) return;
+    const tr=document.createElement('tr');
+    const bc=b.status==='OK'?'ok':b.status==='MISPLACED'?'mp':'ms';
+    const bt=b.status==='OK'?'CORRECT':b.status;
+    tr.innerHTML=`<td>${b.bookId}</td><td>${b.title}</td><td>${rn[b.expectedRow-1]}</td><td>${b.detectedRow?rn[b.detectedRow-1]:'—'}</td><td><span class="swb ${bc}">${bt}</span></td>`;
+    tb.appendChild(tr);
+  });
+}
+
+function filterBooks(f,btn){
+  document.querySelectorAll('.fb').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on'); refreshBooks(f);
+}
+
+function startScanUI(){
+  swNav('scan');
+  document.getElementById('ui-pb-wrap').style.display='block';
+  document.getElementById('ui-msg').style.display='block';
+  document.getElementById('scan-res-wrap').style.display='none';
+  document.getElementById('ui-pb').style.width='0%';
+  startScan();
+  const iv=setInterval(()=>{
+    const prog=Math.min(100,(scanIdx/80)*100);
+    document.getElementById('ui-pb').style.width=prog+'%';
+    if(prog>=100){
+      clearInterval(iv);
+      document.getElementById('ui-msg').textContent='✅ Scan complete';
+      const rn=['1 (Mathematics)','2 (Science)','3 (Literature)','4 (History)'];
+      const tb=document.getElementById('scan-res-tb'); tb.innerHTML='';
+      swBookData.filter(b=>b.status!=='OK').forEach(b=>{
+        const tr=document.createElement('tr');
+        const bc=b.status==='MISPLACED'?'mp':'ms';
+        tr.innerHTML=`<td>${b.bookId}</td><td>${b.title}</td><td>${rn[b.expectedRow-1]}</td><td>${b.detectedRow?rn[b.detectedRow-1]:'—'}</td><td><span class="swb ${bc}">${b.status}</span></td>`;
+        tb.appendChild(tr);
+      });
+      document.getElementById('scan-res-wrap').style.display='block';
+      // update stats
+      const ok=swBookData.filter(b=>b.status==='OK').length;
+      const mis=swBookData.filter(b=>b.status==='MISPLACED').length;
+      const gone=swBookData.filter(b=>b.status==='MISSING').length;
+      ['sw-tot','sw-av','sw-mp','sw-ms'].forEach((id,i)=>{
+        document.getElementById(id).textContent=[swBookData.length,ok,mis,gone][i];
+      });
+      const now=new Date();
+      document.getElementById('rpt-d').textContent=now.toLocaleTimeString();
+      document.getElementById('rpt-t').textContent=swBookData.length;
+      document.getElementById('rpt-ok').textContent=ok;
+      document.getElementById('rpt-mp').textContent=mis;
+      document.getElementById('rpt-ms').textContent=gone;
+      document.getElementById('rpt-pc').textContent=Math.round(ok/swBookData.length*100)+'%';
+      const af=document.getElementById('af'), ne=document.createElement('div');
+      ne.className='ai'; const t=now.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+      ne.innerHTML=`<span class="at">${t}</span><div class="ad" style="background:#2ecc71"></div><span>Scan complete – ${swBookData.length} books processed</span>`;
+      af.prepend(ne);
+      // misplaced table
+      const mt=document.getElementById('mis-tb'); mt.innerHTML='';
+      swBookData.filter(b=>b.status!=='OK').forEach(b=>{
+        const tr=document.createElement('tr'), bc=b.status==='MISPLACED'?'mp':'ms';
+        tr.innerHTML=`<td>${b.bookId}</td><td>${b.title}</td><td>${rn[b.expectedRow-1]}</td><td>${b.detectedRow?rn[b.detectedRow-1]:'—'}</td><td><span class="swb ${bc}">${b.status}</span></td>`;
+        mt.appendChild(tr);
+      });
+    }
+  },120);
+}
+
+// ════════════════════════════════════════════════════════════════
+//  RESIZE
+// ════════════════════════════════════════════════════════════════
+window.addEventListener('resize',()=>{
+  camera.aspect=innerWidth/innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth,innerHeight);
+});
+
+// ════════════════════════════════════════════════════════════════
+//  ANIMATION LOOP
+// ════════════════════════════════════════════════════════════════
+const clock=new THREE.Clock();
+function animate(){
+  requestAnimationFrame(animate);
+  const t=clock.getElapsedTime();
+  updateExplode();
+  rfidRings.forEach(ring=>{
+    const pulse=((t*1.2+ring.userData.phase)%(Math.PI*2))/(Math.PI*2);
+    const sc=.5+pulse*1.5; ring.scale.set(sc,sc,1);
+    ring.material.opacity=.6*(1-pulse);
+  });
+  particles.rotation.y=t*.04;
+  dirLight.intensity=1.1+Math.sin(t*.5)*.1;
+  controls.update();
+  renderer.render(scene,camera);
+}
+animate();
+} catch(err) {
+  document.body.style.background='#0d0d1e';
+  const d=document.createElement('div');
+  d.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(180,30,30,.95);color:#fff;padding:24px 32px;border-radius:10px;font-family:monospace;font-size:13px;z-index:9999;max-width:600px;white-space:pre-wrap;border:2px solid #e74c3c';
+  d.textContent='⚠ Scene Error:\n'+err.message+'\n\n'+err.stack;
+  document.body.appendChild(d);
+}
+</script>
+</body>
+</html>

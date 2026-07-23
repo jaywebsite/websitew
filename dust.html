@@ -1,0 +1,1116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover,user-scalable=no"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="theme-color" content="#0e1014"/>
+<title>DustCart Pro – 3D Viewer</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{width:100%;height:100%;overflow:hidden;background:#0e1014;
+  color:#e6edf3;font-family:'Segoe UI',sans-serif;touch-action:none}
+canvas{display:block;width:100%!important;height:100%!important;
+  position:fixed;top:0;left:0;touch-action:none}
+
+/* ── safe-area padding for iPhone notch / home bar ── */
+#ui{position:fixed;inset:0;pointer-events:none;z-index:10;
+  padding:env(safe-area-inset-top) env(safe-area-inset-right)
+          env(safe-area-inset-bottom) env(safe-area-inset-left)}
+
+/* ── HEADER ── */
+#hdr{position:absolute;top:0;left:0;right:0;
+  padding:max(12px,env(safe-area-inset-top)) 16px 10px;
+  display:flex;align-items:center;justify-content:space-between;
+  background:linear-gradient(180deg,rgba(8,9,12,.95)0%,transparent 100%)}
+#hdr h1{font-size:clamp(.95rem,4vw,1.35rem);font-weight:800;line-height:1.1}
+#hdr h1 em{color:#4caf50;font-style:normal}
+#hdr p{font-size:clamp(.55rem,2.5vw,.68rem);color:#8b949e;margin-top:2px}
+#badge{background:#4caf50;color:#fff;font-size:clamp(.5rem,2vw,.6rem);
+  font-weight:700;padding:3px 10px;border-radius:20px;letter-spacing:1px;
+  white-space:nowrap;flex-shrink:0;margin-left:8px}
+
+/* ── PARTS PANEL — hidden on mobile by default, toggle via ☰ ── */
+#panel{position:absolute;top:0;left:0;bottom:0;
+  background:rgba(8,9,12,.97);border-right:1px solid #2a3040;
+  padding:max(60px,env(safe-area-inset-top)+46px) 12px 24px;
+  width:min(200px,72vw);backdrop-filter:blur(20px);
+  pointer-events:all;overflow-y:auto;
+  transform:translateX(-100%);transition:transform .28s ease;z-index:20}
+#panel.open{transform:translateX(0)}
+#panel h3{font-size:.58rem;text-transform:uppercase;letter-spacing:2px;
+  color:#8b949e;margin-bottom:8px}
+.pb{display:flex;align-items:center;gap:8px;width:100%;background:transparent;
+  border:1px solid transparent;border-radius:6px;color:#e6edf3;
+  font-size:clamp(.68rem,3vw,.76rem);cursor:pointer;
+  padding:8px 8px;margin-bottom:3px;transition:all .15s;text-align:left;
+  min-height:40px}
+.pb:hover,.pb:active{background:rgba(76,175,80,.14);border-color:#4caf50}
+.pb.on{background:rgba(76,175,80,.22);border-color:#4caf50;color:#4caf50}
+.dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+
+/* ── MENU TOGGLE (hamburger) — top-left ── */
+#menuBtn{position:absolute;top:max(10px,env(safe-area-inset-top));left:10px;
+  background:rgba(8,9,12,.90);border:1px solid #2a3040;border-radius:8px;
+  color:#e6edf3;font-size:1.1rem;cursor:pointer;padding:8px 11px;
+  backdrop-filter:blur(18px);pointer-events:all;z-index:30;line-height:1;
+  min-width:42px;min-height:42px;display:flex;align-items:center;justify-content:center}
+
+/* ── OVERLAY when panel open ── */
+#overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);
+  z-index:19;display:none;pointer-events:all}
+#overlay.show{display:block}
+
+/* ── ACTION BUTTONS — bottom bar on mobile, right column on desktop ── */
+#btns{position:absolute;
+  bottom:max(16px,env(safe-area-inset-bottom)+8px);
+  left:50%;transform:translateX(-50%);
+  display:flex;flex-direction:row;flex-wrap:wrap;
+  gap:8px;pointer-events:all;justify-content:center;
+  width:min(420px,96vw)}
+.btn{background:rgba(8,9,12,.93);border:1px solid #2a3040;border-radius:10px;
+  color:#e6edf3;font-size:clamp(.65rem,3vw,.78rem);cursor:pointer;
+  padding:10px 14px;backdrop-filter:blur(18px);transition:all .15s;
+  display:flex;align-items:center;gap:6px;white-space:nowrap;
+  min-height:44px;flex:1;justify-content:center}
+.btn:hover,.btn:active{border-color:#4caf50;color:#4caf50;
+  background:rgba(76,175,80,.12)}
+.btn.on{background:rgba(76,175,80,.18);border-color:#4caf50;color:#4caf50}
+
+/* ── INFO CARD ── */
+#card{position:absolute;
+  bottom:max(76px,env(safe-area-inset-bottom)+68px);
+  left:50%;transform:translateX(-50%) translateY(7px);
+  background:rgba(8,9,12,.97);border:1px solid #2a3040;border-radius:12px;
+  padding:14px 16px;width:min(300px,90vw);backdrop-filter:blur(20px);
+  transition:opacity .25s,transform .25s;opacity:0;pointer-events:none}
+#card.show{opacity:1;transform:translateX(-50%) translateY(0)}
+#card h2{font-size:clamp(.78rem,3.5vw,.9rem);color:#4caf50;margin-bottom:5px}
+#card p{font-size:clamp(.64rem,2.8vw,.72rem);color:#8b949e;line-height:1.55}
+#closeCard{position:absolute;top:8px;right:10px;background:none;border:none;
+  color:#8b949e;font-size:.9rem;cursor:pointer;pointer-events:all;padding:4px}
+
+/* ── HINT bar ── */
+#hint{position:absolute;top:max(58px,env(safe-area-inset-top)+48px);
+  left:50%;transform:translateX(-50%);
+  display:flex;gap:10px;background:rgba(8,9,12,.75);border:1px solid #2a3040;
+  border-radius:28px;padding:5px 14px;font-size:clamp(.52rem,2.2vw,.64rem);
+  color:#8b949e;white-space:nowrap;pointer-events:none}
+#hint span{display:flex;align-items:center;gap:4px}
+kbd{background:#1a1f28;border:1px solid #2a3040;border-radius:3px;
+  padding:1px 4px;font-size:.58rem;color:#e6edf3}
+
+/* ── Desktop overrides (≥640px) — restore original side-panel layout ── */
+@media(min-width:640px){
+  #menuBtn{display:none}
+  #panel{position:absolute;top:78px;left:14px;bottom:auto;
+    transform:none!important;border-right:none;border-radius:11px;
+    width:188px;max-height:80vh;padding:12px 11px}
+  #overlay{display:none!important}
+  #btns{bottom:auto;top:78px;right:14px;left:auto;transform:none;
+    flex-direction:column;width:auto;flex-wrap:nowrap}
+  .btn{flex:none;justify-content:flex-start}
+  #card{left:auto;right:14px;transform:translateY(7px);
+    bottom:78px;width:240px}
+  #card.show{transform:translateY(0)}
+  #hint{top:auto;bottom:16px}
+}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="overlay"></div>
+<div id="ui">
+  <div id="hdr">
+    <div style="margin-left:48px">
+      <h1>DustCart <em>PRO</em></h1>
+      <p>Interactive 3D — tap any part to inspect</p>
+    </div>
+    <div id="badge">PUSH. CLEAN. DONE.</div>
+  </div>
+  <button id="menuBtn" aria-label="Toggle parts menu">☰</button>
+  <div id="panel"><h3>Parts</h3></div>
+  <div id="btns">
+    <button class="btn on" id="rotBtn">🔄 Rotate</button>
+    <button class="btn" id="exBtn">💥 Explode</button>
+    <button class="btn" id="ejBtn">🗑️ Eject Bin</button>
+    <button class="btn" id="rstBtn">⟳ Reset</button>
+  </div>
+  <div id="card">
+    <button id="closeCard">✕</button>
+    <h2 id="ct"></h2><p id="cd"></p>
+  </div>
+  <div id="hint">
+    <span>👆 Rotate</span>
+    <span>🤏 Pinch zoom</span>
+    <span>✌️ Pan</span>
+  </div>
+</div>
+<script type="importmap">
+{"imports":{"three":"https://unpkg.com/three@0.160.0/build/three.module.js",
+"three/addons/":"https://unpkg.com/three@0.160.0/examples/jsm/"}}
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+const H2 = Math.PI / 2, PI = Math.PI;
+const W = () => window.innerWidth, H = () => window.innerHeight;
+
+/* ── Renderer ── */
+const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('c'), antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(W(), H());
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.15;
+
+/* ── Scene & Camera ── */
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0e1014);
+scene.fog = new THREE.FogExp2(0x0e1014, 0.022);
+
+const camera = new THREE.PerspectiveCamera(40, W() / H(), 0.1, 100);
+camera.position.set(5.5, 3.2, 6.0);
+
+const orbit = new OrbitControls(camera, renderer.domElement);
+orbit.enableDamping = true; orbit.dampingFactor = 0.07;
+orbit.minDistance = 2; orbit.maxDistance = 20;
+orbit.target.set(0, 1.0, 0);
+
+/* ── Lights ── */
+scene.add(new THREE.AmbientLight(0xffffff, 0.55));
+const sun = new THREE.DirectionalLight(0xffffff, 2.4);
+sun.position.set(5, 12, 7); sun.castShadow = true;
+sun.shadow.mapSize.set(2048,2048);
+sun.shadow.camera.left=-7; sun.shadow.camera.right=7;
+sun.shadow.camera.top=8; sun.shadow.camera.bottom=-4;
+sun.shadow.camera.far=35;
+scene.add(sun);
+const fill = new THREE.DirectionalLight(0x7799cc, 0.5);
+fill.position.set(-6, 5, -5); scene.add(fill);
+const rim = new THREE.DirectionalLight(0xffffff, 0.35);
+rim.position.set(0, 3, -8); scene.add(rim);
+const ptGreen = new THREE.PointLight(0x4caf50, 0.25, 12);
+ptGreen.position.set(-2, 4, 2); scene.add(ptGreen);
+
+/* ── Ground ── */
+const ground = new THREE.Mesh(
+  new THREE.PlaneGeometry(40, 40),
+  new THREE.MeshStandardMaterial({ color: 0x111418, roughness: 0.95, metalness: 0.0 })
+);
+ground.rotation.x = -H2; ground.receiveShadow = true; scene.add(ground);
+scene.add(new THREE.GridHelper(24, 24, 0x1a2030, 0x1a2030));
+
+/* ── Materials ── */
+const mat = {
+  bodyGreen   : () => new THREE.MeshStandardMaterial({ color: 0x3a7a3e, roughness: 0.38, metalness: 0.08 }),
+  hoodGreen   : () => new THREE.MeshStandardMaterial({ color: 0x3d8a42, roughness: 0.32, metalness: 0.10 }),
+  bodyBlack   : () => new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.55, metalness: 0.28 }),
+  sidePanel   : () => new THREE.MeshStandardMaterial({ color: 0x141414, roughness: 0.50, metalness: 0.30 }),
+  tyre        : () => new THREE.MeshStandardMaterial({ color: 0x080808, roughness: 0.97, metalness: 0.01 }),
+  hubGrey     : () => new THREE.MeshStandardMaterial({ color: 0x2a2a2e, roughness: 0.65, metalness: 0.55 }),
+  hubRing     : () => new THREE.MeshStandardMaterial({ color: 0x4caf50, roughness: 0.20, metalness: 0.10 }),
+  brushCore   : () => new THREE.MeshStandardMaterial({ color: 0x1e3e22, roughness: 0.60, metalness: 0.12 }),
+  bristle     : () => new THREE.MeshStandardMaterial({ color: 0x2d6e35, roughness: 0.55, metalness: 0.05 }),
+  bristleDk   : () => new THREE.MeshStandardMaterial({ color: 0x1a4820, roughness: 0.65, metalness: 0.03 }),
+  aluminum    : () => new THREE.MeshStandardMaterial({ color: 0xb0b8c0, roughness: 0.18, metalness: 0.88 }),
+  rubberGrip  : () => new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.92, metalness: 0.02 }),
+  chrome      : () => new THREE.MeshStandardMaterial({ color: 0xccd0d5, roughness: 0.08, metalness: 0.95 }),
+  lidGreen    : () => new THREE.MeshStandardMaterial({ color: 0x2f6e33, roughness: 0.40, metalness: 0.12 }),
+  darkGrey    : () => new THREE.MeshStandardMaterial({ color: 0x303035, roughness: 0.70, metalness: 0.45 }),
+  intakeBlack : () => new THREE.MeshStandardMaterial({ color: 0x0a0a0a, roughness: 0.85, metalness: 0.05 }),
+};
+
+/* ── Scene root & registries ── */
+const root = new THREE.Group(); scene.add(root);
+const reg = {}, allMeshes = [], origMat = new Map();
+
+function registerMesh(name, mesh, origin) {
+  if (!reg[name]) reg[name] = { meshes:[], origins:[] };
+  reg[name].meshes.push(mesh);
+  reg[name].origins.push(origin.clone());
+  allMeshes.push(mesh);
+  origMat.set(mesh, mesh.material);
+}
+
+/* ── Add helper: mesh to root ── */
+function A(name, geo, matFn, px, py, pz, rx, ry, rz) {
+  rx=rx||0; ry=ry||0; rz=rz||0;
+  const m = new THREE.Mesh(geo, matFn());
+  m.position.set(px,py,pz); m.rotation.set(rx,ry,rz);
+  m.castShadow=true; m.receiveShadow=true;
+  m.userData.part=name; root.add(m);
+  registerMesh(name, m, new THREE.Vector3(px,py,pz));
+  return m;
+}
+
+/* ── Add helper: mesh to a group ── */
+function AG(grp, name, geo, matFn, px, py, pz, rx, ry, rz) {
+  rx=rx||0; ry=ry||0; rz=rz||0;
+  const m = new THREE.Mesh(geo, matFn());
+  m.position.set(px,py,pz); m.rotation.set(rx,ry,rz);
+  m.castShadow=true; m.receiveShadow=true;
+  m.userData.part=name; grp.add(m);
+  registerMesh(name, m, new THREE.Vector3(px,py,pz));
+  return m;
+}
+
+/* =====================================================================
+   BODY DIMENSIONS  (real-world 54cm W × 70cm D × 95cm H ≈ scale 1u=14cm)
+   Width  X: ±1.93  (54cm)
+   Depth  Z: -1.70(front) to +1.70(rear mouth)  (70cm? adjusted for shape)
+   Rear max height: 2.80  (≈95cm total to handle top)
+   Body top at rear: y=1.55
+   Body top at front-lip: y=0.30  (wedge)
+   Wheel radius: 0.54  (large rear), 0.17 (front caster)
+===================================================================== */
+
+/* =====================================================================
+   1. MAIN BODY SHELL — wedge shape built from layered cross-sections
+      We approximate the curved wedge with a LatheGeometry-derived
+      side profile + BoxGeometry slabs + CylinderGeometry for the hood.
+===================================================================== */
+
+/* --- Base slab (bottom floor of body) --- */
+A('Body', new THREE.BoxGeometry(3.86, 0.12, 3.40), mat.bodyBlack, 0, 0.06, 0);
+
+/* --- Rear wall (tall vertical back) --- */
+A('Body', new THREE.BoxGeometry(3.86, 1.62, 0.16), mat.bodyBlack, 0, 0.87, 1.64);
+
+/* --- Upper rear box (the large enclosed bin housing) --- */
+A('Body', new THREE.BoxGeometry(3.86, 1.28, 2.80), mat.bodyBlack, 0, 0.76, 0.28);
+
+/* --- Rear top cap --- */
+A('Body', new THREE.BoxGeometry(3.86, 0.14, 2.96), mat.bodyBlack, 0, 1.43, 0.30);
+
+/* --- Left inner wall slab (slightly inset) --- */
+A('Body', new THREE.BoxGeometry(0.14, 1.28, 2.80), mat.bodyBlack, -1.86, 0.76, 0.28);
+/* --- Right inner wall slab --- */
+A('Body', new THREE.BoxGeometry(0.14, 1.28, 2.80), mat.bodyBlack,  1.86, 0.76, 0.28);
+
+/* =====================================================================
+   2. GREEN UPPER SHELL — follows the wedge profile over the body
+      Body total width = 3.86 (inner walls at ±1.90, outer side panels at ±2.00)
+      Shell width = 3.80 — sits flush on top of body, no side overhang.
+      Rear top: y=1.50, z=+1.56  →  Front lip: y=0.32, z=-1.50
+      Angle = atan2(1.18, 3.06) ≈ 0.368 rad
+===================================================================== */
+{
+  const sA  = Math.atan2(1.18, 3.06);
+  const sL  = Math.sqrt(1.18*1.18 + 3.06*3.06);
+  const T   = 0.20;
+  const hT  = T * 0.5;
+  const cy  = (1.50+0.32)*0.5 + hT*Math.cos(sA) + 0.04;
+  /* Width 3.80 — exactly matches body top, no side protrusion */
+  A('Green Shell', new THREE.BoxGeometry(3.80, T, sL), mat.hoodGreen,
+    0, cy, -0.02, -sA, 0, 0);
+
+  /* Louvre ridges on shell */
+  for (let i=0; i<5; i++) {
+    const t = (i+0.5)/5;
+    const lz = -sL/2 + t*sL;
+    const wz = lz*Math.cos(sA);
+    const wy = cy + lz*Math.sin(sA) + hT*Math.cos(sA) + 0.020;
+    A('Green Shell', new THREE.BoxGeometry(3.60, 0.030, 0.050), mat.lidGreen,
+      0, wy, wz, -sA, 0, 0);
+  }
+}
+
+/* --- Top access lid (small rectangle near centre-rear of shell) --- */
+A('Green Shell', new THREE.BoxGeometry(1.10, 0.08, 0.72), mat.lidGreen, 0, 1.48, 0.62);
+/* Lid hinge strip */
+A('Green Shell', new THREE.BoxGeometry(1.18, 0.05, 0.06), mat.bodyBlack, 0, 1.50, 0.28);
+/* Lid latch nub */
+A('Green Shell', new THREE.BoxGeometry(0.18, 0.06, 0.10), mat.bodyBlack, 0, 1.52, 1.00);
+
+/* =====================================================================
+   3. BLACK SIDE PANELS — flush against the outer body walls (x=±1.97)
+      Body outer face is at x=±1.93 (half of 3.86).
+      Side panels: thickness 0.14, centred at x=±1.97 so outer face=±2.04.
+      Two segments: rear tall (full height) + front shorter (tapers with wedge).
+===================================================================== */
+/* Left side — rear tall */
+A('Side Panels', new THREE.BoxGeometry(0.14, 1.44, 2.80), mat.sidePanel, -1.97, 0.78, 0.28);
+/* Left side — front lower */
+A('Side Panels', new THREE.BoxGeometry(0.14, 0.72, 1.50), mat.sidePanel, -1.97, 0.37, -0.97);
+/* Right side — rear tall */
+A('Side Panels', new THREE.BoxGeometry(0.14, 1.44, 2.80), mat.sidePanel,  1.97, 0.78, 0.28);
+/* Right side — front lower */
+A('Side Panels', new THREE.BoxGeometry(0.14, 0.72, 1.50), mat.sidePanel,  1.97, 0.37, -0.97);
+
+/* =====================================================================
+   4. CURVED FRONT HOOD / INTAKE
+      The intake opening is at the very front, facing forward (−Z).
+      A curved hood sweeps up from the ground to cover the brush.
+      We approximate the curve with stacked CylinderGeometry arcs.
+===================================================================== */
+/* Hood — main curved arc (half-cylinder lying on its side)
+   Width = 3.94 to span exactly from side panel outer face to outer face (±2.04 → 4.08, minus wall thickness) */
+{
+  const hoodOuter = new THREE.CylinderGeometry(0.70, 0.70, 3.94, 40, 1, true, -H2*0.05, H2*1.10);
+  const hoodMesh = new THREE.Mesh(hoodOuter, mat.hoodGreen());
+  hoodMesh.position.set(0, 0.30, -1.34);
+  hoodMesh.rotation.set(0, 0, H2);
+  hoodMesh.castShadow = true;
+  hoodMesh.receiveShadow = true;
+  hoodMesh.userData.part = 'Hood';
+  root.add(hoodMesh);
+  registerMesh('Hood', hoodMesh, new THREE.Vector3(0, 0.30, -1.34));
+}
+
+/* Hood inner black liner */
+{
+  const hoodInner = new THREE.CylinderGeometry(0.62, 0.62, 3.96, 36, 1, true, -H2*0.05, H2*1.10);
+  const hoodIn = new THREE.Mesh(hoodInner, mat.intakeBlack());
+  hoodIn.position.set(0, 0.30, -1.34);
+  hoodIn.rotation.set(0, 0, H2);
+  hoodIn.userData.part = 'Hood';
+  root.add(hoodIn);
+  registerMesh('Hood', hoodIn, new THREE.Vector3(0, 0.30, -1.34));
+}
+
+/* Hood side cheeks — sit flush at the outer face of the side panels (x=±2.04) */
+A('Hood', new THREE.CylinderGeometry(0.70, 0.70, 0.13, 32, 1, false, -H2*0.05, H2*1.10),
+  mat.hoodGreen, -2.04, 0.30, -1.34, 0, 0, H2);
+A('Hood', new THREE.CylinderGeometry(0.70, 0.70, 0.13, 32, 1, false, -H2*0.05, H2*1.10),
+  mat.hoodGreen,  2.04, 0.30, -1.34, 0, 0, H2);
+
+/* Intake lip — behind the brush so it doesn't block view */
+A('Hood', new THREE.BoxGeometry(4.08, 0.08, 0.16), mat.bodyBlack, 0, 0.04, -1.50);
+
+/* Hood-to-body transition fillet strip */
+A('Hood', new THREE.BoxGeometry(4.08, 0.10, 0.20), mat.hoodGreen, 0, 1.00, -1.28);
+
+/* =====================================================================
+   5. BRUSH ROLLER
+      Positioned at the VERY FRONT of the machine, fully exposed.
+      Centre: x=0, y=0.20 (bottom touches ground), z=-1.72 (front edge)
+      Radius 0.20, width 3.76 (almost full body width)
+===================================================================== */
+const BRUSH_R  = 0.200;
+const BRUSH_Y  = BRUSH_R;        // bottom just touches ground
+const BRUSH_Z  = -1.72;          // MOVED FORWARD — fully exposed at front
+const BRUSH_HW = 1.88;           // half-width
+
+const brushGrp = new THREE.Group();
+root.add(brushGrp);
+
+function addBrush(geo, matFn, px, py, pz, rx, ry, rz) {
+  rx=rx||0; ry=ry||0; rz=rz||0;
+  const m = new THREE.Mesh(geo, matFn());
+  m.position.set(px,py,pz); m.rotation.set(rx,ry,rz);
+  m.castShadow=true; m.userData.part='Brush Roller'; brushGrp.add(m);
+  registerMesh('Brush Roller', m, new THREE.Vector3(px,py,pz));
+}
+
+/* Central dark core cylinder — axis along X */
+addBrush(new THREE.CylinderGeometry(BRUSH_R, BRUSH_R, BRUSH_HW*2, 36),
+  mat.brushCore, 0, BRUSH_Y, BRUSH_Z, 0, 0, H2);
+
+/* Dense bristle tufts — 28 torus rings, alternating dark/mid green */
+const N_RINGS = 28;
+for (let ri=0; ri<N_RINGS; ri++) {
+  const bx = -BRUSH_HW + (ri/(N_RINGS-1))*BRUSH_HW*2;
+  addBrush(new THREE.TorusGeometry(BRUSH_R+0.028, 0.016, 10, 30),
+    ri%2===0 ? mat.bristle : mat.bristleDk,
+    bx, BRUSH_Y, BRUSH_Z, H2, 0, 0);
+}
+
+/* Secondary small rings between main rings */
+for (let ri=0; ri<N_RINGS-1; ri++) {
+  const step = (BRUSH_HW*2)/(N_RINGS-1);
+  const bx = -BRUSH_HW + ri*step + step*0.5;
+  addBrush(new THREE.TorusGeometry(BRUSH_R+0.014, 0.009, 8, 26),
+    mat.bristleDk, bx, BRUSH_Y, BRUSH_Z, H2, 0, 0);
+}
+
+/* Chrome end-caps */
+addBrush(new THREE.CylinderGeometry(BRUSH_R+0.035, BRUSH_R+0.035, 0.045, 24),
+  mat.chrome, -BRUSH_HW-0.015, BRUSH_Y, BRUSH_Z, 0, 0, H2);
+addBrush(new THREE.CylinderGeometry(BRUSH_R+0.035, BRUSH_R+0.035, 0.045, 24),
+  mat.chrome,  BRUSH_HW+0.015, BRUSH_Y, BRUSH_Z, 0, 0, H2);
+
+/* Brush side support discs (visible from outside) */
+addBrush(new THREE.CylinderGeometry(BRUSH_R+0.055, BRUSH_R+0.055, 0.030, 20),
+  mat.darkGrey, -BRUSH_HW+0.12, BRUSH_Y, BRUSH_Z, 0, 0, H2);
+addBrush(new THREE.CylinderGeometry(BRUSH_R+0.055, BRUSH_R+0.055, 0.030, 20),
+  mat.darkGrey,  BRUSH_HW-0.12, BRUSH_Y, BRUSH_Z, 0, 0, H2);
+
+/* Central axle (chrome) */
+addBrush(new THREE.CylinderGeometry(0.028, 0.028, BRUSH_HW*2+0.28, 12),
+  mat.chrome, 0, BRUSH_Y, BRUSH_Z, 0, 0, H2);
+
+/* =====================================================================
+   6. LARGE REAR WHEELS
+      Two wheels, one on each side, partially enclosed by side panels.
+      Centre: x=±2.30, y=0.54, z=+0.85
+      Tyre radius=0.54, width=0.34
+===================================================================== */
+function buildWheel(side) {
+  const WX = side * 2.32, WY = 0.54, WZ = 0.90;
+  const TR = 0.54, TW = 0.34, RR = 0.42, HR = 0.130;
+
+  const wg = new THREE.Group();
+  wg.position.set(WX, WY, WZ);
+  wg.rotation.set(0, 0, H2);   // cylinder axis → world X
+  root.add(wg);
+
+  function addW(nm, geo, mfn, px, py, pz, rx, ry, rz) {
+    px=px||0; py=py||0; pz=pz||0; rx=rx||0; ry=ry||0; rz=rz||0;
+    const m = new THREE.Mesh(geo, mfn());
+    m.position.set(px,py,pz); m.rotation.set(rx,ry,rz);
+    m.castShadow=true; m.receiveShadow=true; m.userData.part=nm;
+    wg.add(m); registerMesh(nm, m, new THREE.Vector3(WX,WY,WZ));
+  }
+
+  const hw = TW*0.5;
+
+  /* Rubber tyre */
+  addW('Rear Wheels', new THREE.CylinderGeometry(TR,TR,TW,52), mat.tyre);
+  /* Tyre shoulder rings */
+  addW('Rear Wheels', new THREE.TorusGeometry(TR*0.92,0.022,12,52),
+    mat.tyre, 0, hw+0.010, 0, H2,0,0);
+  addW('Rear Wheels', new THREE.TorusGeometry(TR*0.92,0.022,12,52),
+    mat.tyre, 0,-(hw+0.010),0, H2,0,0);
+
+  /* Dark grey rim */
+  addW('Rear Wheels', new THREE.CylinderGeometry(RR,RR,TW-0.018,44), mat.hubGrey);
+  /* Rim outer caps */
+  addW('Rear Wheels', new THREE.CylinderGeometry(RR,RR,0.016,44), mat.hubGrey, 0, hw+0.008,0);
+  addW('Rear Wheels', new THREE.CylinderGeometry(RR,RR,0.016,44), mat.hubGrey, 0,-(hw+0.008),0);
+
+  /* Green hub ring accent */
+  addW('Rear Wheels', new THREE.TorusGeometry(RR*0.78,0.028,14,44),
+    mat.hubRing, 0, hw+0.018,0, H2,0,0);
+  addW('Rear Wheels', new THREE.TorusGeometry(RR*0.78,0.028,14,44),
+    mat.hubRing, 0,-(hw+0.018),0, H2,0,0);
+
+  /* Hub cap */
+  addW('Rear Wheels', new THREE.CylinderGeometry(HR,HR,0.028,28), mat.darkGrey, 0, hw+0.022,0);
+  addW('Rear Wheels', new THREE.CylinderGeometry(HR,HR,0.028,28), mat.darkGrey, 0,-(hw+0.022),0);
+  /* Hub cap green centre dot */
+  addW('Rear Wheels', new THREE.CylinderGeometry(HR*0.55,HR*0.55,0.010,18),
+    mat.hubRing, 0, hw+0.034,0);
+  addW('Rear Wheels', new THREE.CylinderGeometry(HR*0.55,HR*0.55,0.010,18),
+    mat.hubRing, 0,-(hw+0.034),0);
+
+  /* Chrome axle bolt */
+  addW('Rear Wheels', new THREE.CylinderGeometry(0.025,0.025,TW+0.24,12), mat.chrome);
+  addW('Rear Wheels', new THREE.CylinderGeometry(0.036,0.036,0.016, 8), mat.chrome, 0, hw+0.052,0);
+  addW('Rear Wheels', new THREE.CylinderGeometry(0.036,0.036,0.016, 8), mat.chrome, 0,-(hw+0.052),0);
+}
+buildWheel(-1); buildWheel(1);
+
+/* =====================================================================
+   7. FRONT SWIVEL CASTERS — one on each side, OUTSIDE the body width
+      Body outer face = x±2.04. Caster wheel sits further out at x±2.28
+      so the wheel is fully visible outside the chassis.
+      Wheel radius 0.28, width 0.13, Z = -1.20 (front underside)
+===================================================================== */
+function buildCaster(side) {
+  const CWR  = 0.280;   // wheel radius
+  const CWW  = 0.130;   // wheel width
+  const hww  = CWW * 0.5;
+  const BODY_FLOOR = 0.12;  // body floor underside — nothing visible above this
+
+  /* Wheel centre X: fully outside the body (body outer face = ±2.04) */
+  const WX = side * (2.04 + hww + 0.06);   // ±2.165
+  const WY = CWR;     // bottom flush with ground
+  const WZ = -1.20;
+
+  /* ── Wheel group (cylinder axis along X) ── */
+  const wg = new THREE.Group();
+  wg.position.set(WX, WY, WZ);
+  wg.rotation.set(0, 0, H2);
+  root.add(wg);
+
+  function addW(geo, mfn, px, py, pz, rx, ry, rz) {
+    px=px||0; py=py||0; pz=pz||0; rx=rx||0; ry=ry||0; rz=rz||0;
+    const m = new THREE.Mesh(geo, mfn());
+    m.position.set(px,py,pz); m.rotation.set(rx,ry,rz);
+    m.castShadow=true; m.receiveShadow=true;
+    m.userData.part='Front Casters'; wg.add(m);
+    registerMesh('Front Casters', m, new THREE.Vector3(WX,WY,WZ));
+  }
+
+  /* Black rubber tyre */
+  addW(new THREE.CylinderGeometry(CWR, CWR, CWW, 36), mat.tyre);
+  addW(new THREE.TorusGeometry(CWR*0.90, 0.018, 12, 36), mat.tyre, 0,  hww+0.009,0, H2,0,0);
+  addW(new THREE.TorusGeometry(CWR*0.90, 0.018, 12, 36), mat.tyre, 0, -hww-0.009,0, H2,0,0);
+  /* Dark green inner rim */
+  addW(new THREE.CylinderGeometry(CWR*0.72, CWR*0.72, CWW*0.85, 28), mat.brushCore);
+  addW(new THREE.CylinderGeometry(CWR*0.72, CWR*0.72, 0.012, 28), mat.brushCore, 0,  hww+0.006,0);
+  addW(new THREE.CylinderGeometry(CWR*0.72, CWR*0.72, 0.012, 28), mat.brushCore, 0, -hww-0.006,0);
+  /* Chrome axle */
+  addW(new THREE.CylinderGeometry(0.024, 0.024, CWW+0.10, 12), mat.chrome);
+  addW(new THREE.CylinderGeometry(0.038, 0.038, 0.016, 10), mat.chrome, 0,  hww+0.058,0);
+  addW(new THREE.CylinderGeometry(0.038, 0.038, 0.016, 10), mat.chrome, 0, -hww-0.058,0);
+
+  /* ── Fork — all parts stay BELOW body floor (y < 0.12) ── */
+  /* inboard X = just inside the wheel, at the body edge */
+  const inbX = side * (2.04 + hww - 0.008);
+
+  function addF(geo, mfn, px, py, pz, rx, ry, rz) {
+    px=px||0; py=py||0; pz=pz||0; rx=rx||0; ry=ry||0; rz=rz||0;
+    const m = new THREE.Mesh(geo, mfn());
+    m.position.set(px,py,pz); m.rotation.set(rx,ry,rz);
+    m.castShadow=true; m.receiveShadow=true;
+    m.userData.part='Front Casters'; root.add(m);
+    registerMesh('Front Casters', m, new THREE.Vector3(px,py,pz));
+  }
+
+  /* Fork arm: from bottom (y≈0.01) up to just under body floor (y=0.11)
+     Height = 0.10, centred at y=0.055  */
+  const forkH  = BODY_FLOOR - 0.01;       // 0.11
+  const forkCY = forkH * 0.5 + 0.01;      // 0.065
+  addF(new THREE.BoxGeometry(0.055, forkH, 0.200), mat.darkGrey,
+    inbX, forkCY, WZ);
+
+  /* Crown plate — horizontal slab just under body floor */
+  addF(new THREE.BoxGeometry(0.055, 0.045, 0.220), mat.darkGrey,
+    inbX, BODY_FLOOR - 0.025, WZ);
+
+  /* Swivel bearing collar ring — sits right under body floor */
+  addF(new THREE.CylinderGeometry(0.052, 0.052, 0.036, 18), mat.darkGrey,
+    inbX, BODY_FLOOR - 0.018, WZ);
+
+  /* Swivel stem stub — short, goes INTO body floor, not visible above */
+  addF(new THREE.CylinderGeometry(0.028, 0.028, 0.060, 14), mat.chrome,
+    inbX, BODY_FLOOR + 0.010, WZ);
+}
+buildCaster(-1); buildCaster(1);
+
+/* =====================================================================
+   8. PUSH HANDLE
+      Rises from rear top of body at ~60° from horizontal (≈30° from vert).
+      Reference: aluminum tube with molded mounting brackets, ends with
+      horizontal black rubber T-grip.
+      Mount point: x=0, y=1.50, z=+1.56
+      Handle rises at angle ≈ -0.52 rad (tilting rearward)
+      Total tube length ≈ 3.80 to reach approx y=4.75 (95cm body + 90cm handle)
+===================================================================== */
+
+/* Lower mount bracket — rectangular black collar */
+A('Push Handle', new THREE.BoxGeometry(0.36,0.12,0.28), mat.bodyBlack, 0, 1.52, 1.52);
+/* Bracket side flanges */
+A('Push Handle', new THREE.BoxGeometry(0.08,0.24,0.14), mat.bodyBlack, -0.20, 1.56, 1.58);
+A('Push Handle', new THREE.BoxGeometry(0.08,0.24,0.14), mat.bodyBlack,  0.20, 1.56, 1.58);
+
+/* Lower transition collar ring */
+A('Push Handle', new THREE.CylinderGeometry(0.055,0.055,0.10,18), mat.bodyBlack,
+  0, 1.64, 1.48, 0.52, 0, 0);
+
+/* Main aluminum tube — two parallel tubes side by side (like reference image) */
+/* Angle: tilts backward (+z) as it rises: rotation.x = +0.52 rad */
+const TUBE_ANGLE = 0.520;   // rad, tilting back from vertical
+const TUBE_L     = 3.60;
+/* Tube pair offset ±0.06 x for the two-rail look */
+A('Push Handle', new THREE.CylinderGeometry(0.030,0.030,TUBE_L,16), mat.aluminum,
+  -0.07, 1.64 + Math.sin(H2-TUBE_ANGLE)*TUBE_L*0.5,
+  1.48  + Math.cos(H2-TUBE_ANGLE)*TUBE_L*0.5,
+  TUBE_ANGLE, 0, 0);
+A('Push Handle', new THREE.CylinderGeometry(0.030,0.030,TUBE_L,16), mat.aluminum,
+   0.07, 1.64 + Math.sin(H2-TUBE_ANGLE)*TUBE_L*0.5,
+  1.48  + Math.cos(H2-TUBE_ANGLE)*TUBE_L*0.5,
+  TUBE_ANGLE, 0, 0);
+
+/* Upper collar where tubes merge into T-bar */
+const TX = 0;
+const TY = 1.64 + Math.sin(H2-TUBE_ANGLE)*TUBE_L;
+const TZ = 1.48  + Math.cos(H2-TUBE_ANGLE)*TUBE_L;
+A('Push Handle', new THREE.CylinderGeometry(0.060,0.060,0.10,18), mat.bodyBlack,
+  TX, TY-0.04, TZ, TUBE_ANGLE,0,0);
+
+/* Horizontal T-bar crossbar */
+A('Push Handle', new THREE.CylinderGeometry(0.030,0.030,1.40,16), mat.aluminum,
+  TX, TY, TZ, 0, 0, H2);
+
+/* Left rubber grip */
+A('Push Handle', new THREE.CylinderGeometry(0.048,0.048,0.32,16), mat.rubberGrip,
+  TX-0.695, TY, TZ, 0, 0, H2);
+A('Push Handle', new THREE.SphereGeometry(0.050,14,10), mat.rubberGrip,
+  TX-0.855, TY, TZ);
+
+/* Right rubber grip */
+A('Push Handle', new THREE.CylinderGeometry(0.048,0.048,0.32,16), mat.rubberGrip,
+  TX+0.695, TY, TZ, 0, 0, H2);
+A('Push Handle', new THREE.SphereGeometry(0.050,14,10), mat.rubberGrip,
+  TX+0.855, TY, TZ);
+
+/* Mid-point connecting bar between the two tubes */
+const MY = 1.64 + Math.sin(H2-TUBE_ANGLE)*TUBE_L*0.50;
+const MZ = 1.48  + Math.cos(H2-TUBE_ANGLE)*TUBE_L*0.50;
+A('Push Handle', new THREE.CylinderGeometry(0.016,0.016,0.18,10), mat.aluminum,
+  0, MY, MZ, 0, 0, H2);
+
+/* =====================================================================
+   9. WASTE BIN INTERIOR (visible through open front intake)
+===================================================================== */
+/* Inner floor */
+A('Waste Bin', new THREE.BoxGeometry(3.70, 0.06, 3.20), mat.brushCore, 0, 0.18, 0.22);
+/* Inner left wall */
+A('Waste Bin', new THREE.BoxGeometry(0.06, 1.26, 3.20), mat.brushCore, -1.86, 0.78, 0.22);
+/* Inner right wall */
+A('Waste Bin', new THREE.BoxGeometry(0.06, 1.26, 3.20), mat.brushCore,  1.86, 0.78, 0.22);
+/* Inner rear wall */
+A('Waste Bin', new THREE.BoxGeometry(3.70, 1.26, 0.06), mat.brushCore, 0, 0.78, 1.60);
+/* Inner angled guide ramp (guides debris from brush up into bin) */
+{
+  const rA2 = Math.atan2(0.75, 1.10);
+  const rL2 = Math.sqrt(0.75*0.75 + 1.10*1.10);
+  A('Waste Bin', new THREE.BoxGeometry(3.70, 0.06, rL2),
+    mat.brushCore, 0, 0.58, -0.72, -rA2, 0, 0);
+}
+
+/* =====================================================================
+   9b. DETACHABLE COLLECTION TRAY
+       Slides DOWN from the body underside when ejected.
+       Docked position: y_offset = 0  (flush under body floor at y≈0.12)
+       Ejected position: y_offset = -0.55  (drops below, visible as open tray)
+===================================================================== */
+const binTray = new THREE.Group();
+root.add(binTray);
+
+function addTray(geo, mfn, px, py, pz, rx, ry, rz) {
+  rx=rx||0; ry=ry||0; rz=rz||0;
+  const m = new THREE.Mesh(geo, mfn());
+  m.position.set(px,py,pz); m.rotation.set(rx,ry,rz);
+  m.castShadow=true; m.receiveShadow=true;
+  m.userData.part='Collection Tray'; binTray.add(m);
+  registerMesh('Collection Tray', m, new THREE.Vector3(px,py,pz));
+}
+
+/* Tray outer shell — slightly smaller than body width, sits at y=0.08 */
+/* Bottom plate */
+addTray(new THREE.BoxGeometry(3.60, 0.06, 2.90), mat.sidePanel, 0, 0.03, 0.20);
+/* Left wall */
+addTray(new THREE.BoxGeometry(0.07, 0.36, 2.90), mat.sidePanel, -1.80, 0.21, 0.20);
+/* Right wall */
+addTray(new THREE.BoxGeometry(0.07, 0.36, 2.90), mat.sidePanel,  1.80, 0.21, 0.20);
+/* Rear wall */
+addTray(new THREE.BoxGeometry(3.60, 0.36, 0.07), mat.sidePanel, 0, 0.21, 1.62);
+/* Front lip (partial — open at front so brush can sweep in) */
+addTray(new THREE.BoxGeometry(3.60, 0.14, 0.07), mat.sidePanel, 0, 0.10, -1.28);
+
+/* Green inner floor visible inside tray */
+addTray(new THREE.BoxGeometry(3.46, 0.025, 2.76), mat.brushCore, 0, 0.065, 0.20);
+
+/* Eject latch handle — small black bar with green grip on the front-right */
+addTray(new THREE.BoxGeometry(0.36, 0.08, 0.10), mat.bodyBlack,  1.50, 0.08, -1.35);
+addTray(new THREE.BoxGeometry(0.18, 0.08, 0.08), mat.hubRing,    1.50, 0.08, -1.44);
+
+/* Release clips — two chrome pins on front face */
+addTray(new THREE.CylinderGeometry(0.030,0.030,0.10,10), mat.chrome, -0.80, 0.10, -1.38, H2,0,0);
+addTray(new THREE.CylinderGeometry(0.030,0.030,0.10,10), mat.chrome,  0.80, 0.10, -1.38, H2,0,0);
+
+/* Side rails / slide guides (visible on left+right body sides) */
+addTray(new THREE.BoxGeometry(0.04, 0.08, 2.88), mat.chrome, -1.84, 0.36, 0.20);
+addTray(new THREE.BoxGeometry(0.04, 0.08, 2.88), mat.chrome,  1.84, 0.36, 0.20);
+
+/* Clip notches on rails */
+for (let ci=0; ci<3; ci++) {
+  const cz = -1.10 + ci*1.10;
+  addTray(new THREE.BoxGeometry(0.06,0.05,0.06), mat.darkGrey, -1.85, 0.40, cz);
+  addTray(new THREE.BoxGeometry(0.06,0.05,0.06), mat.darkGrey,  1.85, 0.40, cz);
+}
+
+/* Debris pile inside tray (visible when ejected) */
+const trayDebPal = [0x8B7355,0x6B8E23,0xa09060,0x556B2F,0x9a8050];
+for (let di=0; di<18; di++) {
+  const dr=Math.random();
+  let dg;
+  if (dr<0.45) dg=new THREE.BoxGeometry(0.08+Math.random()*0.12,0.018,0.06+Math.random()*0.10);
+  else if (dr<0.75) dg=new THREE.PlaneGeometry(0.09+Math.random()*0.14,0.07+Math.random()*0.09);
+  else dg=new THREE.SphereGeometry(0.025+Math.random()*0.028,6,5);
+  const dm=new THREE.Mesh(dg, new THREE.MeshStandardMaterial({
+    color:trayDebPal[Math.floor(Math.random()*trayDebPal.length)],
+    roughness:0.92, side:THREE.DoubleSide}));
+  dm.position.set((Math.random()-0.5)*3.0, 0.06, -1.10+Math.random()*2.50);
+  dm.rotation.set(0, Math.random()*PI*2, 0);
+  dm.castShadow=true; dm.userData.part='Collection Tray';
+  binTray.add(dm);
+  registerMesh('Collection Tray', dm, dm.position.clone());
+}
+
+/* Tray starts docked flush under body */
+binTray.position.set(0, 0, 0);
+
+/* =====================================================================
+   10. BODY ACCENT DETAILS
+===================================================================== */
+/* Green accent stripe — painted onto the outer face of the side panel */
+A('Side Panels', new THREE.BoxGeometry(0.016, 0.50, 1.20), mat.hubRing, -2.05, 0.78, 0.20);
+A('Side Panels', new THREE.BoxGeometry(0.016, 0.50, 1.20), mat.hubRing,  2.05, 0.78, 0.20);
+
+/* ── DUSTCART PRO logo panels — canvas texture on both sides ── */
+{
+  /* Build the logo canvas once, reuse as texture */
+  function makeLogoTexture() {
+    const cw = 512, ch = 180;
+    const cv = document.createElement('canvas');
+    cv.width = cw; cv.height = ch;
+    const ctx = cv.getContext('2d');
+
+    /* Background: dark green rounded rect */
+    ctx.fillStyle = '#1a3d20';
+    roundRect(ctx, 0, 0, cw, ch, 18);
+    ctx.fill();
+
+    /* Green border */
+    ctx.strokeStyle = '#4caf50';
+    ctx.lineWidth = 5;
+    roundRect(ctx, 4, 4, cw-8, ch-8, 14);
+    ctx.stroke();
+
+    /* "DUSTCART" — large bold white */
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 72px Arial Black, Arial, sans-serif';
+    ctx.letterSpacing = '4px';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('DUSTCART', cw*0.5, ch*0.40);
+
+    /* "PRO" — bright green, smaller, below */
+    ctx.fillStyle = '#4caf50';
+    ctx.font = 'bold 46px Arial Black, Arial, sans-serif';
+    ctx.letterSpacing = '8px';
+    ctx.fillText('PRO', cw*0.5, ch*0.78);
+
+    /* Small leaf icon to the left of DUSTCART */
+    ctx.fillStyle = '#4caf50';
+    ctx.font = '38px sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText('🌿', 22, ch*0.42);
+
+    return new THREE.CanvasTexture(cv);
+  }
+
+  /* Helper: rounded rect path */
+  function roundRect(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x+r, y);
+    ctx.lineTo(x+w-r, y); ctx.arcTo(x+w,y,   x+w,y+r,   r);
+    ctx.lineTo(x+w, y+h-r); ctx.arcTo(x+w,y+h, x+w-r,y+h, r);
+    ctx.lineTo(x+r, y+h); ctx.arcTo(x,y+h,   x,y+h-r,   r);
+    ctx.lineTo(x, y+r); ctx.arcTo(x,y,     x+r,y,     r);
+    ctx.closePath();
+  }
+
+  const logoTex = makeLogoTexture();
+  logoTex.encoding = THREE.sRGBEncoding;
+
+  /* Logo panel geometry: W=1.40 (Z depth), H=0.42 (Y height), depth=0.025 */
+  const logoPanelGeo = new THREE.BoxGeometry(0.025, 0.42, 1.40);
+
+  /* Left side — faces outward (-X), texture on the left face */
+  const logoMatL = new THREE.MeshStandardMaterial({
+    map: logoTex, roughness: 0.35, metalness: 0.10 });
+  /* Right side — need mirrored texture so text reads correctly */
+  function makeLogoTextureMirrored() {
+    const cw = 512, ch = 180;
+    const cv = document.createElement('canvas');
+    cv.width = cw; cv.height = ch;
+    const ctx = cv.getContext('2d');
+    /* Mirror horizontally */
+    ctx.translate(cw, 0); ctx.scale(-1, 1);
+    /* Reuse same drawing code */
+    ctx.fillStyle = '#1a3d20';
+    roundRect(ctx, 0, 0, cw, ch, 18); ctx.fill();
+    ctx.strokeStyle = '#4caf50'; ctx.lineWidth = 5;
+    roundRect(ctx, 4, 4, cw-8, ch-8, 14); ctx.stroke();
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 72px Arial Black, Arial, sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('DUSTCART', cw*0.5, ch*0.40);
+    ctx.fillStyle = '#4caf50';
+    ctx.font = 'bold 46px Arial Black, Arial, sans-serif';
+    ctx.fillText('PRO', cw*0.5, ch*0.78);
+    ctx.fillStyle = '#4caf50'; ctx.font = '38px sans-serif';
+    ctx.textAlign = 'right'; ctx.fillText('🌿', cw-22, ch*0.42);
+    const t = new THREE.CanvasTexture(cv);
+    t.encoding = THREE.sRGBEncoding;
+    return t;
+  }
+  const logoTexR = makeLogoTextureMirrored();
+
+  /* Six-face materials: only the outward face gets the logo */
+  /* BoxGeometry face order: +X, -X, +Y, -Y, +Z, -Z */
+  const blankMat = () => new THREE.MeshStandardMaterial({ color:0x1a3d20, roughness:0.40 });
+
+  /* Left panel at x=-2.055: outward face = -X = index 1 */
+  const matsL = [blankMat(),
+    new THREE.MeshStandardMaterial({ map: logoTex, roughness:0.35 }),
+    blankMat(), blankMat(), blankMat(), blankMat()];
+  const meshL = new THREE.Mesh(logoPanelGeo, matsL);
+  meshL.position.set(-2.055, 0.62, -0.12);
+  meshL.castShadow = true; meshL.userData.part = 'Side Panels';
+  root.add(meshL); registerMesh('Side Panels', meshL, new THREE.Vector3(-2.055, 0.62, -0.12));
+
+  /* Right panel at x=+2.055: outward face = +X = index 0 */
+  const matsR = [
+    new THREE.MeshStandardMaterial({ map: logoTexR, roughness:0.35 }),
+    blankMat(), blankMat(), blankMat(), blankMat(), blankMat()];
+  const meshR = new THREE.Mesh(logoPanelGeo, matsR);
+  meshR.position.set( 2.055, 0.62, -0.12);
+  meshR.castShadow = true; meshR.userData.part = 'Side Panels';
+  root.add(meshR); registerMesh('Side Panels', meshR, new THREE.Vector3(2.055, 0.62, -0.12));
+}
+
+/* Rear brand plate — flush on rear wall face */
+A('Body', new THREE.BoxGeometry(1.60, 0.24, 0.030), mat.hoodGreen, 0, 1.00, 1.73);
+
+/* Sensor box on top rear */
+A('Green Shell', new THREE.BoxGeometry(0.44,0.10,0.32), mat.bodyBlack, 0, 1.58, 1.20);
+A('Green Shell', new THREE.BoxGeometry(0.28,0.14,0.20), mat.darkGrey, 0, 1.66, 1.20);
+
+/* Rubber bumper strip along bottom front — behind brush */
+A('Hood', new THREE.BoxGeometry(4.08, 0.06, 0.14), mat.rubberGrip, 0, 0.03, -1.52);
+
+/* =====================================================================
+   11. GROUND DEBRIS
+===================================================================== */
+const debPal = [0x8B7355,0xa09060,0x6B8E23,0x556B2F,0xb8a070,0x7a9040];
+const debList = [];
+for (let i=0; i<24; i++) {
+  let dg; const dr = Math.random();
+  if (dr<0.40) dg = new THREE.BoxGeometry(0.07+Math.random()*0.11,0.011,0.06+Math.random()*0.10);
+  else if (dr<0.75) dg = new THREE.PlaneGeometry(0.08+Math.random()*0.12,0.06+Math.random()*0.10);
+  else dg = new THREE.SphereGeometry(0.025+Math.random()*0.030,6,5);
+  const dm = new THREE.Mesh(dg, new THREE.MeshStandardMaterial({
+    color: debPal[Math.floor(Math.random()*debPal.length)],
+    roughness:0.92, side:THREE.DoubleSide }));
+  dm.position.set((Math.random()-0.5)*3.6, 0.012, -1.80-Math.random()*2.0);
+  dm.rotation.set(Math.random()*0.3,Math.random()*PI*2,Math.random()*0.3);
+  dm.castShadow=true; root.add(dm);
+  debList.push({ mesh:dm, phase:Math.random()*PI*2, spd:0.5+Math.random()*0.7 });
+}
+
+/* =====================================================================
+   PART INFO
+===================================================================== */
+const PART_INFO = {
+  'Body': {
+    color:'#1a1a1a',
+    desc:'Main structural body. Wedge-shaped matte black ABS housing with an enclosed rear waste collection chamber. Wide base tapers toward the front intake opening.'
+  },
+  'Green Shell': {
+    color:'#3a7a3e',
+    desc:'Matte green upper shell with slight aerodynamic curvature. Covers the top of the body from front to rear with integrated louvre ridges for airflow. Includes the access lid for emptying the bin.'
+  },
+  'Hood': {
+    color:'#3d8a42',
+    desc:'Curved green front hood that sweeps over the brush roller opening. Creates a smooth aerodynamic intake channel that guides debris up into the collection bin.'
+  },
+  'Side Panels': {
+    color:'#141414',
+    desc:'Matte black outer side panels that taper from tall at the rear to low at the front. Partially enclose the large rear wheels. Green accent stripe adds the premium commercial look.'
+  },
+  'Brush Roller': {
+    color:'#1e3e22',
+    desc:'Full-width rotating brush roller with 28 dense dark-green bristle rings on a chrome shaft. Spans almost the entire body width. Sweeps leaves, dust, and small debris up into the waste bin as the machine moves forward.'
+  },
+  'Rear Wheels': {
+    color:'#080808',
+    desc:'Two large rubber rear wheels (radius 54cm equivalent) with dark grey hubs and a green accent ring. Wide tyres provide stability on all floor surfaces.'
+  },
+  'Front Casters': {
+    color:'#303035',
+    desc:'Two 360° swivel casters mounted under the front of the body. Small rubber wheels with grey metal forks allow effortless steering in any direction.'
+  },
+  'Push Handle': {
+    color:'#b0b8c0',
+    desc:'Brushed aluminum two-tube push handle rising at 60° with molded mounting brackets at the base. Topped with a horizontal T-bar and black rubber grip end-caps for comfortable all-day pushing.'
+  },
+  'Waste Bin': {
+    color:'#1e3e22',
+    desc:'High-capacity integrated waste collection chamber inside the body. Dark green interior walls visible through the open front intake. Easy-empty design — tilt the machine to dump contents.'
+  },
+  'Collection Tray': {
+    color:'#141414',
+    desc:'Detachable bottom collection tray that slides out from under the body. Holds all swept debris. Click "Eject Bin" to drop it down for emptying — snap it back in to resume sweeping.'
+  },
+};
+
+/* =====================================================================
+   EXPLODE VECTORS
+===================================================================== */
+const EXPLODE = {
+  'Body'         : new THREE.Vector3( 0.0, -0.40,  0.30),
+  'Green Shell'  : new THREE.Vector3( 0.0,  2.20, -0.30),
+  'Hood'         : new THREE.Vector3( 0.0,  0.50, -2.80),
+  'Side Panels'  : new THREE.Vector3( 2.40,  0.20,  0.00),
+  'Brush Roller' : new THREE.Vector3( 0.0,  0.40, -3.20),
+  'Rear Wheels'  : new THREE.Vector3( 2.20,  0.20,  0.50),
+  'Front Casters': new THREE.Vector3( 0.0, -0.80, -2.40),
+  'Push Handle'  : new THREE.Vector3( 0.0,  2.60,  1.60),
+  'Waste Bin'    : new THREE.Vector3( 0.0, -1.40,  0.80),
+  'Collection Tray': new THREE.Vector3( 0.0, -2.20,  0.40),
+};
+
+/* =====================================================================
+   UI — build part buttons
+===================================================================== */
+const partPanel = document.getElementById('panel');
+for (const [nm, pd] of Object.entries(PART_INFO)) {
+  const btn = document.createElement('button');
+  btn.className='pb'; btn.dataset.p=nm;
+  btn.innerHTML=`<span class="dot" style="background:${pd.color}"></span>${nm}`;
+  btn.addEventListener('click', () => {
+    selectPart(nm, btn);
+    /* Close slide-out panel on mobile after selecting */
+    panel.classList.remove('open');
+    overlay.classList.remove('show');
+  });
+  partPanel.appendChild(btn);
+}
+
+/* =====================================================================
+   SELECTION / HIGHLIGHT
+===================================================================== */
+let selPart=null, selBtn=null;
+const hlMat = new THREE.MeshStandardMaterial({
+  color:0x4caf50, roughness:0.18, metalness:0.25,
+  emissive:0x1a5020, emissiveIntensity:0.90 });
+
+function selectPart(nm, btn) {
+  if (selPart) {
+    reg[selPart]?.meshes.forEach(m=>{ m.material=origMat.get(m); });
+    selBtn?.classList.remove('on');
+  }
+  if (selPart===nm) { selPart=null; selBtn=null;
+    document.getElementById('card').classList.remove('show'); return; }
+  selPart=nm; selBtn=btn; btn?.classList.add('on');
+  reg[nm]?.meshes.forEach(m=>{ m.material=hlMat; });
+  document.getElementById('ct').textContent=nm;
+  document.getElementById('cd').textContent=PART_INFO[nm]?.desc||'';
+  document.getElementById('card').classList.add('show');
+}
+
+/* =====================================================================
+   RAYCASTING
+===================================================================== */
+const raycaster=new THREE.Raycaster(), mouseV=new THREE.Vector2();
+renderer.domElement.addEventListener('click', e=>{
+  mouseV.x=(e.clientX/W())*2-1;
+  mouseV.y=-(e.clientY/H())*2+1;
+  raycaster.setFromCamera(mouseV,camera);
+  const hits=raycaster.intersectObjects(allMeshes,false);
+  if (hits.length>0) {
+    const p=hits[0].object.userData.part;
+    if (p) selectPart(p, document.querySelector(`.pb[data-p="${p}"]`));
+  }
+});
+
+/* =====================================================================
+   CONTROLS
+===================================================================== */
+let autoRot=true, exploded=false, exTimer=0, exDir=0;
+let binEjected=false, binTimer=0, binDir=0;
+const BIN_EJECT_Y = -0.58;
+
+/* ── Mobile menu toggle ── */
+const menuBtn  = document.getElementById('menuBtn');
+const panel    = document.getElementById('panel');
+const overlay  = document.getElementById('overlay');
+menuBtn.addEventListener('click', ()=>{
+  panel.classList.toggle('open');
+  overlay.classList.toggle('show');
+});
+overlay.addEventListener('click', ()=>{
+  panel.classList.remove('open');
+  overlay.classList.remove('show');
+});
+
+/* ── Close info card ── */
+document.getElementById('closeCard').addEventListener('click', ()=>{
+  document.getElementById('card').classList.remove('show');
+  if (selPart){ reg[selPart]?.meshes.forEach(m=>{m.material=origMat.get(m);});
+    selBtn?.classList.remove('on'); selPart=null; selBtn=null; }
+});
+
+document.getElementById('rotBtn').addEventListener('click', function(){
+  autoRot=!autoRot; this.classList.toggle('on',autoRot); });
+
+document.getElementById('exBtn').addEventListener('click', function(){
+  exploded=!exploded; exDir=exploded?1:-1;
+  this.classList.toggle('on',exploded);
+  this.textContent=exploded?'🔧 Collapse':'💥 Explode'; });
+
+document.getElementById('ejBtn').addEventListener('click', function(){
+  binEjected=!binEjected; binDir=binEjected?1:-1;
+  this.classList.toggle('on',binEjected);
+  this.textContent=binEjected?'🗑️ Dock Bin':'🗑️ Eject Bin'; });
+
+document.getElementById('rstBtn').addEventListener('click', ()=>{
+  camera.position.set(5.5,3.2,6.0); orbit.target.set(0,1.0,0); orbit.update();
+  root.rotation.y=0;
+  if (exploded){ exploded=false; exDir=-1;
+    document.getElementById('exBtn').classList.remove('on');
+    document.getElementById('exBtn').textContent='💥 Explode'; }
+  if (binEjected){ binEjected=false; binDir=-1;
+    document.getElementById('ejBtn').classList.remove('on');
+    document.getElementById('ejBtn').textContent='🗑️ Eject Bin'; }
+  if (selPart){ reg[selPart]?.meshes.forEach(m=>{m.material=origMat.get(m);});
+    selBtn?.classList.remove('on'); selPart=null; selBtn=null;
+    document.getElementById('card').classList.remove('show'); }
+});
+
+/* =====================================================================
+   ANIMATION LOOP
+===================================================================== */
+const easeCubic=t=>t<0.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;
+const clk=new THREE.Clock();
+
+(function loop(){
+  requestAnimationFrame(loop);
+  const dt=Math.min(clk.getDelta(),0.05);
+  const et=clk.elapsedTime;
+
+  if (autoRot) root.rotation.y += dt*0.20;
+
+  debList.forEach(d=>{
+    d.mesh.position.y=0.012+Math.sin(et*d.spd+d.phase)*0.007; });
+
+  /* Bin eject / dock animation */
+  if (binDir!==0) {
+    binTimer=Math.max(0,Math.min(1,binTimer+binDir*dt*1.6));
+    const bt=easeCubic(binTimer);
+    binTray.position.y = BIN_EJECT_Y * bt;
+    if (binTimer===0||binTimer===1) binDir=0;
+  }
+
+  /* Explode */
+  if (exDir!==0) {
+    exTimer=Math.max(0,Math.min(1,exTimer+exDir*dt*1.35));
+    const t=easeCubic(exTimer);
+    for (const [pk, ev] of Object.entries(EXPLODE)) {
+      if (!reg[pk]) continue;
+      reg[pk].meshes.forEach((m,i)=>{
+        const o=reg[pk].origins[i];
+        let vx=ev.x;
+        if (pk==='Side Panels') vx = o.x<0 ? -Math.abs(ev.x) : Math.abs(ev.x);
+        if (pk==='Rear Wheels') vx = o.x<0 ? -Math.abs(ev.x) : Math.abs(ev.x);
+        if (pk==='Front Casters') vx = o.x<0 ? -Math.abs(ev.x)*0.6 : Math.abs(ev.x)*0.6;
+        m.position.set(o.x+vx*t, o.y+ev.y*t, o.z+ev.z*t);
+      });
+    }
+    /* Brush roller as group */
+    const bev=EXPLODE['Brush Roller'];
+    brushGrp.position.set(bev.x*t, bev.y*t, bev.z*t);
+    if (exTimer===0||exTimer===1) exDir=0;
+  }
+
+  orbit.update();
+  renderer.render(scene,camera);
+})();
+
+window.addEventListener('resize',()=>{
+  camera.aspect=W()/H(); camera.updateProjectionMatrix();
+  renderer.setSize(W(),H()); });
+
+</script>
+</body>
+</html>

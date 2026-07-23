@@ -1,0 +1,1006 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no"/>
+<title>Smart Step – 3D Model</title>
+<script src="three.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+body{background:#0a0f1e;overflow:hidden;font-family:'Segoe UI',sans-serif;touch-action:none;}
+canvas{display:block;touch-action:none;}
+#ui{position:fixed;top:12px;left:12px;color:#fff;background:rgba(0,28,18,.90);
+  border:1px solid #2d6a4f;border-radius:12px;padding:13px 17px;max-width:215px;
+  backdrop-filter:blur(8px);z-index:10;}
+#ui h1{font-size:1.05rem;color:#52b788;margin-bottom:3px;}
+#ui .sub{font-size:.64rem;color:#95d5b2;margin-bottom:9px;line-height:1.4;}
+#ui h2{font-size:.68rem;color:#74c69d;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;}
+#ui ul{font-size:.66rem;color:#b7e4c7;line-height:1.7;padding-left:13px;margin-bottom:9px;}
+#ebar{position:fixed;top:12px;right:12px;background:rgba(0,28,18,.90);
+  border:1px solid #2d6a4f;border-radius:12px;padding:12px 16px;color:#fff;
+  backdrop-filter:blur(8px);min-width:162px;z-index:10;}
+#ebar h3{font-size:.68rem;color:#74c69d;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;}
+.ml{font-size:.63rem;color:#95d5b2;margin-bottom:2px;}
+.meter{background:#0d2618;border-radius:6px;height:9px;margin-bottom:6px;overflow:hidden;}
+.mf{height:100%;border-radius:6px;transition:width .45s;}
+.k{background:linear-gradient(90deg,#52b788,#b7e4c7);}
+.b{background:linear-gradient(90deg,#f4a261,#e9c46a);}
+.o{background:linear-gradient(90deg,#4cc9f0,#7209b7);}
+#sc{font-size:1.4rem;color:#52b788;text-align:center;margin-top:4px;font-weight:bold;}
+#sl{font-size:.62rem;color:#95d5b2;text-align:center;}
+#flow{position:fixed;bottom:58px;left:50%;transform:translateX(-50%);
+  background:rgba(0,28,18,.90);border:1px solid #2d6a4f;border-radius:12px;
+  padding:8px 15px;display:flex;align-items:center;gap:9px;
+  backdrop-filter:blur(8px);color:#b7e4c7;font-size:.62rem;z-index:10;white-space:nowrap;}
+.fs{text-align:center;min-width:48px;}.fa{color:#52b788;font-size:.9rem;}
+#ctrl{position:fixed;bottom:13px;left:50%;transform:translateX(-50%);
+  display:flex;gap:6px;background:rgba(0,28,18,.90);border:1px solid #2d6a4f;
+  border-radius:30px;padding:7px 15px;backdrop-filter:blur(8px);z-index:10;flex-wrap:wrap;justify-content:center;}
+#ctrl button{background:#1b4332;color:#95d5b2;border:1px solid #2d6a4f;border-radius:20px;
+  padding:5px 13px;cursor:pointer;font-size:.74rem;transition:all .2s;-webkit-user-select:none;user-select:none;}
+#ctrl button:hover{background:#2d6a4f;color:#fff;}
+#ctrl button.on{background:#52b788;color:#000;}
+#tip{position:fixed;pointer-events:none;background:rgba(0,20,15,.96);
+  border:1px solid #52b788;border-radius:8px;padding:7px 11px;
+  color:#b7e4c7;font-size:.70rem;display:none;max-width:180px;line-height:1.5;z-index:20;}
+@media(max-width:520px){#ui{display:none;}#ebar{min-width:128px;}}
+</style>
+</head>
+<body>
+<div id="ui">
+  <h1>⚡ SMART STEP</h1>
+  <div class="sub">Staircase-Based Power System<br>Saint Joseph College · Rosario Batangas Inc.</div>
+  <h2>Key Features</h2>
+  <ul>
+    <li>🏃 Kinetic Energy Harvesting</li>
+    <li>🌿 Sustainable &amp; Clean Energy</li>
+    <li>💡 Efficient Power Generation</li>
+    <li>♻️ Eco-Friendly Innovation</li>
+  </ul>
+  <h2>Benefits</h2>
+  <ul>
+    <li>Reduces electricity consumption</li>
+    <li>Encourages sustainable practices</li>
+    <li>Supports green campus initiatives</li>
+    <li>Real-world learning experience</li>
+  </ul>
+</div>
+<div id="ebar">
+  <h3>Live Energy Monitor</h3>
+  <div class="ml">Kinetic Input</div>
+  <div class="meter"><div class="mf k" id="mk" style="width:0%"></div></div>
+  <div class="ml">Battery Level</div>
+  <div class="meter"><div class="mf b" id="mb" style="width:45%"></div></div>
+  <div class="ml">LED Output</div>
+  <div class="meter"><div class="mf o" id="mo" style="width:30%"></div></div>
+  <div id="sc">0</div><div id="sl">Steps Captured</div>
+</div>
+<div id="flow">
+  <div class="fs"><div>🦶</div><div>Foot Step</div></div><div class="fa">→</div>
+  <div class="fs"><div>⚙️</div><div>Kinetic</div></div><div class="fa">→</div>
+  <div class="fs"><div>⚡</div><div>Converted</div></div><div class="fa">→</div>
+  <div class="fs"><div>🔋</div><div>Battery</div></div><div class="fa">→</div>
+  <div class="fs"><div>💡</div><div>LED Lights</div></div>
+</div>
+<div id="ctrl">
+  <button id="bRot" class="on">🔄 Rotate</button>
+  <button id="bExp">💥 Explode</button>
+  <button id="bStep">👣 Step</button>
+  <button id="bNight">🌙 Night</button>
+  <button id="bReset">↩ Reset</button>
+</div>
+<div id="tip"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// SMOOTH ORBIT CONTROLS – mouse + touch + pinch zoom
+// ═══════════════════════════════════════════════════════
+THREE.OrbitControls = function(cam, el) {
+  var scope = this;
+  this.target = new THREE.Vector3();
+  this.minDist = 5; this.maxDist = 40;
+  this.dampFactor = 0.10;
+
+  // ── Angle limits – prevent camera going behind walls or underground ──
+  // phi  = vertical (0=top, PI=bottom).  Keep between 15° and 80° above horizon.
+  this.minPolarAngle = Math.PI * 0.12;   // ~22° – stops going too high overhead
+  this.maxPolarAngle = Math.PI * 0.52;   // ~94° – stops going underground
+  // theta = horizontal.  -PI..PI.  Front of model faces +Z.
+  // Allow roughly 210° sweep in front; block the back-wall quadrant.
+  this.minAzimuthAngle = -Math.PI * 0.48; // ~-86° – can't go behind left wall
+  this.maxAzimuthAngle =  Math.PI * 0.48; // ~+86° – can't go behind right wall
+
+  var sph  = new THREE.Spherical();
+  var dSph = new THREE.Spherical();
+  var scaleDelta = 0;
+  var pan  = new THREE.Vector3();
+  var EPS  = 1e-6;
+  var quat    = new THREE.Quaternion().setFromUnitVectors(cam.up, new THREE.Vector3(0,1,0));
+  var quatInv = quat.clone().invert();
+  var offset  = new THREE.Vector3();
+  var rStart  = new THREE.Vector2(), rEnd = new THREE.Vector2(), rDelta = new THREE.Vector2();
+  var STATE   = {NONE:0,ROTATE:1,PAN:2,TOUCH_R:3,TOUCH_DP:4};
+  var state   = STATE.NONE;
+  var prevPinch = 0;
+
+  this.update = function(){
+    var pos = cam.position;
+    offset.copy(pos).sub(scope.target);
+    offset.applyQuaternion(quat);
+    sph.setFromVector3(offset);
+    var df = scope.dampFactor;
+    sph.theta  += dSph.theta * df;
+    sph.phi    += dSph.phi   * df;
+    // Clamp vertical angle
+    sph.phi    = Math.max(scope.minPolarAngle, Math.min(scope.maxPolarAngle, sph.phi));
+    // Clamp horizontal angle
+    sph.theta  = Math.max(scope.minAzimuthAngle, Math.min(scope.maxAzimuthAngle, sph.theta));
+    sph.radius += scaleDelta * df;
+    sph.radius  = Math.max(scope.minDist, Math.min(scope.maxDist, sph.radius));
+    scope.target.addScaledVector(pan, df);
+    // Clamp pan so target stays well inside the scene walls
+    scope.target.x = Math.max(-6, Math.min(8, scope.target.x));
+    scope.target.y = Math.max(0.5, Math.min(5.5, scope.target.y));
+    scope.target.z = Math.max(-8, Math.min(3, scope.target.z));
+    dSph.theta   *= (1-df); dSph.phi *= (1-df);
+    scaleDelta   *= (1-df); pan.multiplyScalar(1-df);
+    offset.setFromSpherical(sph);
+    offset.applyQuaternion(quatInv);
+    pos.copy(scope.target).add(offset);
+    cam.lookAt(scope.target);
+  };
+
+  function rotBy(dx,dy){ dSph.theta -= dx*0.010; dSph.phi -= dy*0.010; }
+  function panBy(dx,dy){
+    var d=new THREE.Vector3(-dx,dy*0.6,0).multiplyScalar(sph.radius*0.0012);
+    d.applyQuaternion(cam.quaternion); pan.add(d);
+  }
+  function zoomBy(d){ scaleDelta += d; scaleDelta=Math.max(-sph.radius+scope.minDist+1, Math.min(sph.radius-scope.minDist-1,scaleDelta)); }
+
+  // mouse
+  function onMD(e){ e.preventDefault();
+    if(e.button===0){state=STATE.ROTATE;} else if(e.button===2){state=STATE.PAN;}
+    rStart.set(e.clientX,e.clientY);
+    window.addEventListener('mousemove',onMM); window.addEventListener('mouseup',onMU);
+  }
+  function onMM(e){
+    rEnd.set(e.clientX,e.clientY); rDelta.subVectors(rEnd,rStart);
+    if(state===STATE.ROTATE) rotBy(rDelta.x,rDelta.y);
+    else if(state===STATE.PAN) panBy(rDelta.x,rDelta.y);
+    rStart.copy(rEnd);
+  }
+  function onMU(){ state=STATE.NONE; window.removeEventListener('mousemove',onMM); window.removeEventListener('mouseup',onMU); }
+  function onWheel(e){ e.preventDefault(); zoomBy(e.deltaY*0.04); }
+
+  // touch
+  function pinchDist(e){ var dx=e.touches[0].clientX-e.touches[1].clientX,dy=e.touches[0].clientY-e.touches[1].clientY; return Math.sqrt(dx*dx+dy*dy); }
+  function onTS(e){ e.preventDefault();
+    if(e.touches.length===1){ state=STATE.TOUCH_R; rStart.set(e.touches[0].clientX,e.touches[0].clientY); }
+    else if(e.touches.length===2){ state=STATE.TOUCH_DP; prevPinch=pinchDist(e);
+      rStart.set((e.touches[0].clientX+e.touches[1].clientX)/2,(e.touches[0].clientY+e.touches[1].clientY)/2);
+    }
+  }
+  function onTM(e){ e.preventDefault();
+    if(state===STATE.TOUCH_R&&e.touches.length===1){
+      rEnd.set(e.touches[0].clientX,e.touches[0].clientY); rDelta.subVectors(rEnd,rStart);
+      rotBy(rDelta.x,rDelta.y); rStart.copy(rEnd);
+    } else if(state===STATE.TOUCH_DP&&e.touches.length===2){
+      var d=pinchDist(e); zoomBy((prevPinch-d)*0.06); prevPinch=d;
+      var mx=(e.touches[0].clientX+e.touches[1].clientX)/2, my=(e.touches[0].clientY+e.touches[1].clientY)/2;
+      rEnd.set(mx,my); rDelta.subVectors(rEnd,rStart); panBy(rDelta.x,rDelta.y); rStart.copy(rEnd);
+    }
+  }
+  function onTE(e){ if(e.touches.length===0) state=STATE.NONE; else if(e.touches.length===1){ state=STATE.TOUCH_R; rStart.set(e.touches[0].clientX,e.touches[0].clientY); } }
+  function onCM(e){ e.preventDefault(); }
+
+  el.addEventListener('mousedown',onMD);
+  el.addEventListener('wheel',onWheel,{passive:false});
+  el.addEventListener('contextmenu',onCM);
+  el.addEventListener('touchstart',onTS,{passive:false});
+  el.addEventListener('touchmove',onTM,{passive:false});
+  el.addEventListener('touchend',onTE,{passive:false});
+};
+</script>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// RENDERER + SCENE + CAMERA
+// ═══════════════════════════════════════════════════════
+var renderer = new THREE.WebGLRenderer({antialias:true});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+renderer.setSize(window.innerWidth,window.innerHeight);
+renderer.shadowMap.enabled=true;
+renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+document.body.appendChild(renderer.domElement);
+
+var scene=new THREE.Scene();
+scene.background=new THREE.Color(0x0d1824);
+scene.fog=new THREE.Fog(0x0d1824,40,85);
+
+var camera=new THREE.PerspectiveCamera(42,window.innerWidth/window.innerHeight,0.1,200);
+camera.position.set(14,12,18);
+
+var ctrl=new THREE.OrbitControls(camera,renderer.domElement);
+ctrl.target.set(1,3,-3);
+
+// LIGHTS
+var ambient=new THREE.AmbientLight(0xffffff,0.52); scene.add(ambient);
+var sun=new THREE.DirectionalLight(0xfff4d0,1.9); sun.position.set(14,22,12);
+sun.castShadow=true; sun.shadow.mapSize.set(2048,2048);
+sun.shadow.camera.left=-24; sun.shadow.camera.right=24;
+sun.shadow.camera.top=24; sun.shadow.camera.bottom=-24; sun.shadow.camera.far=75;
+scene.add(sun);
+var fill=new THREE.DirectionalLight(0x99aaff,0.30); fill.position.set(-14,7,-6); scene.add(fill);
+
+// GROUND
+var gnd=new THREE.Mesh(new THREE.PlaneGeometry(80,80),new THREE.MeshLambertMaterial({color:0x0e1a0e}));
+gnd.rotation.x=-Math.PI/2; gnd.position.y=-0.58; gnd.receiveShadow=true; scene.add(gnd);
+scene.add(new THREE.GridHelper(80,80,0x1a3020,0x1a3020));
+
+// ── helpers ──
+function sm(c,r,m,ec,ei){ return new THREE.MeshStandardMaterial({color:c,roughness:r!==undefined?r:0.7,metalness:m!==undefined?m:0.05,emissive:ec||0,emissiveIntensity:ei||0}); }
+function bx(w,h,d,mat){ var mesh=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat); mesh.castShadow=true; mesh.receiveShadow=true; return mesh; }
+function cy(rt,rb,h,seg,mat){ var mesh=new THREE.Mesh(new THREE.CylinderGeometry(rt,rb,h,seg),mat); mesh.castShadow=true; return mesh; }
+function sp(r,mat){ return new THREE.Mesh(new THREE.SphereGeometry(r,10,8),mat); }
+function tor(r,t,mat){ return new THREE.Mesh(new THREE.TorusGeometry(r,t,8,32),mat); }
+function wire(pts,col){ var g=new THREE.BufferGeometry().setFromPoints(pts.map(function(p){return new THREE.Vector3(p[0],p[1],p[2]);})); return new THREE.Line(g,new THREE.LineBasicMaterial({color:col||0x00ff44})); }
+
+var interactable=[];
+var root=new THREE.Group(); scene.add(root);
+var G={};
+['base','stairs','railings','generators','powerBox','battery','ledPole','signage','trees'].forEach(function(k){G[k]=new THREE.Group();root.add(G[k]);});
+</script>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// 1. PLATFORM BASE + BACK WALL
+// ═══════════════════════════════════════════════════════
+// Cream/beige platform slab
+var platM=sm(0xd4cfc0,0.78); var trimM=sm(0x2e2e2e,0.5,0.2);
+var plat=bx(20,0.6,14,platM); plat.position.set(0.5,-0.30,-2.5); G.base.add(plat);
+// black edge trim
+[[20.4,0.16,0.24, 0.5,-0.58, 4.6],[20.4,0.16,0.24, 0.5,-0.58,-9.6],
+ [0.24,0.16,14.4,-9.7,-0.58,-2.5],[0.24,0.16,14.4,10.7,-0.58,-2.5]].forEach(function(a){
+  var t=bx(a[0],a[1],a[2],trimM); t.position.set(a[3],a[4],a[5]); G.base.add(t); });
+
+// Exhibition back wall – pushed further back, won't be reached by clamped camera
+var wallM=sm(0xf0ede5,0.88);
+var bwall=bx(22,10,0.40,wallM); bwall.position.set(0.5,4.2,-10.6); G.base.add(bwall);
+// Wall base skirting
+var wsk=bx(22,0.48,0.52,trimM); wsk.position.set(0.5,0.24,-10.4); G.base.add(wsk);
+// Right wall side panel – pushed right so it doesn't clip the LED pole
+var rwall=bx(0.40,10,15,wallM); rwall.position.set(11.2,4.2,-2.5); G.base.add(rwall);
+// Left wall panel
+var lwall=bx(0.40,10,15,wallM); lwall.position.set(-9.7,4.2,-2.5); G.base.add(lwall);
+
+// Floor tiles (subtle grid pattern on platform)
+for(var tx=-4;tx<=5;tx++){
+  for(var tz=-3;tz<=2;tz++){
+    var tileL=bx(1.98,0.01,1.98,sm(0xcac5b5,0.85));
+    tileL.position.set(tx*2+0.5,-0.295,tz*2-2.5); G.base.add(tileL);
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// 2. STAIRCASE – exactly 4 steps + landing, fully detailed
+// ═══════════════════════════════════════════════════════
+// Step dimensions: W=5.5, depth=1.6, height=0.50
+var SW=5.5, SD=1.6, SH=0.50;
+var stepMat =sm(0xcdc7b2,0.72);   // concrete tread
+var riserMat=sm(0xb8b0a0,0.80);   // riser face (slightly darker)
+var noseMat =sm(0xa09888,0.65);   // nosing edge
+var labelMat=sm(0x155724,0.38,0,0x061408,0.55); // dark green label
+var stepGroups=[];
+
+for(var i=0;i<4;i++){
+  var sg=new THREE.Group();
+
+  // Full solid step block
+  var sb=bx(SW,SH*(i+1),SD,stepMat);
+  sb.position.y=SH*(i+1)/2; sg.add(sb);
+
+  // Riser front face (vertical face you see)
+  var rf=bx(SW,SH,0.065,riserMat);
+  rf.position.set(0,SH*i+SH/2,SD/2+0.033); sg.add(rf);
+
+  // "SMART STEP" dark green embossed label on each riser
+  var lp=bx(2.5,0.23,0.075,labelMat);
+  lp.position.set(0,SH*i+SH/2,SD/2+0.076);
+  lp.userData={label:'Step '+(i+1)+' – Smart Step',tip:'Piezoelectric tiles under this tread convert foot-pressure into AC electricity. 3 generators per step.'};
+  interactable.push(lp); sg.add(lp);
+  // small white text lines on label
+  var lt1=bx(1.6,0.045,0.04,sm(0xffffff,0.7)); lt1.position.set(0,SH*i+SH/2+0.06,SD/2+0.12); sg.add(lt1);
+  var lt2=bx(1.2,0.040,0.04,sm(0xffffff,0.7)); lt2.position.set(0,SH*i+SH/2-0.04,SD/2+0.12); sg.add(lt2);
+
+  // Nosing edge (rounded front lip of tread)
+  var nose=cy(0.045,0.045,SW,20,noseMat);
+  nose.rotation.z=Math.PI/2; nose.position.set(0,SH*(i+1)+0.012,SD/2); sg.add(nose);
+
+  // Under-step shadow gap strip (darker recessed line)
+  var gap=bx(SW,0.04,0.04,sm(0x888070,0.9));
+  gap.position.set(0,SH*(i+1)+0.005,SD/2-0.05); sg.add(gap);
+
+  sg.position.set(-2.5,0,-SD*i); sg._bounce=0;
+  G.stairs.add(sg); stepGroups.push(sg);
+}
+
+// TOP LANDING SLAB (the flat top platform above step 4)
+var landing=bx(SW+0.3,SH,SD*2.0,stepMat);
+landing.position.set(-2.5,SH*4+SH/2,-SD*4-SD*1.0); G.stairs.add(landing);
+var landNose=cy(0.045,0.045,SW+0.3,20,noseMat);
+landNose.rotation.z=Math.PI/2; landNose.position.set(-2.5,SH*4+SH+0.012,-SD*4); G.stairs.add(landNose);
+
+// Stair side cheeks (thick solid walls on each side)
+[-2.5-SW/2-0.16, -2.5+SW/2+0.16].forEach(function(sx){
+  var cheek=bx(0.32,SH*4+SH+0.9,SD*4+SD*2.2,sm(0xc8c2af,0.80));
+  cheek.position.set(sx,(SH*4+SH+0.9)/2,-SD*1.5-SD*0.6); G.stairs.add(cheek);
+  // cheek top beveled cap
+  var cap=bx(0.32,0.09,SD*4+SD*2.2,sm(0xb8b0a0,0.75));
+  cap.position.set(sx,SH*4+SH+0.94,-SD*1.5-SD*0.6); G.stairs.add(cap);
+});
+</script>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// 3. RAILINGS – dark steel, matches image exactly
+// ═══════════════════════════════════════════════════════
+function buildRailing(xOff){
+  var rg=new THREE.Group();
+  var railM=sm(0x1c1c1c,0.28,0.80); // near-black brushed steel
+  var postM=sm(0x242424,0.25,0.85);
+
+  var diagLen=Math.sqrt(Math.pow(SD*4,2)+Math.pow(SH*4,2));
+  var diagAngle=Math.atan2(SH*4,SD*4);
+
+  // Main diagonal handrail
+  var hr=cy(0.052,0.052,diagLen+0.7,10,railM);
+  hr.rotation.x=diagAngle; hr.position.set(xOff,SH*2+1.02,-SD*1.5); rg.add(hr);
+
+  // Mid diagonal bar
+  var mr=cy(0.035,0.035,diagLen+0.5,10,railM);
+  mr.rotation.x=diagAngle; mr.position.set(xOff,SH*2+0.50,-SD*1.5); rg.add(mr);
+
+  // Top horizontal on landing
+  var topH=cy(0.052,0.052,SD*2.2,10,railM);
+  topH.rotation.x=Math.PI/2; topH.position.set(xOff,SH*4+1.02,-SD*4-SD*1.1); rg.add(topH);
+
+  // Vertical posts at each step (5 posts)
+  for(var i=0;i<=4;i++){
+    var ph=SH*(4-i)+1.08;
+    var post=cy(0.048,0.048,ph,10,postM);
+    post.position.set(xOff,SH*i+ph/2,-SD*i); rg.add(post);
+    var fp=bx(0.14,0.075,0.14,postM); fp.position.set(xOff,SH*i+0.038,-SD*i); rg.add(fp);
+  }
+  // Post at landing end
+  var lp2=cy(0.048,0.048,1.08,10,postM);
+  lp2.position.set(xOff,SH*4+0.54,-SD*4-SD*2.0); rg.add(lp2);
+  var lfp=bx(0.14,0.075,0.14,postM); lfp.position.set(xOff,SH*4+0.038,-SD*4-SD*2.0); rg.add(lfp);
+
+  // Horizontal infill bars between posts (vertical spindles)
+  for(var i=0;i<4;i++){
+    for(var s=1;s<=2;s++){
+      var sp2=cy(0.022,0.022,SH*(4-i)*0.7+0.55,8,sm(0x303030,0.25,0.8));
+      var sx2=-SD*i-SD*s/3;
+      sp2.position.set(xOff,SH*i+sp2.geometry.parameters.height/2+0.05,sx2); rg.add(sp2);
+    }
+  }
+  G.railings.add(rg);
+}
+buildRailing(-2.5-SW/2-0.16);
+buildRailing(-2.5+SW/2+0.16);
+
+// ═══════════════════════════════════════════════════════
+// 4. PIEZOELECTRIC GENERATORS – fully detailed
+// ═══════════════════════════════════════════════════════
+var genBodyM=sm(0x3c3c3c,0.38,0.60);
+var genCapM =sm(0x585858,0.28,0.65);
+var springM =sm(0x848416,0.48,0.35);
+var genBaseM=sm(0x181818,0.30,0.72);
+// GREEN led strip – correct hex for green (not cyan!)
+var ledEM=new THREE.MeshStandardMaterial({color:0x00cc55,roughness:0.2,metalness:0,emissive:new THREE.Color(0x00cc55),emissiveIntensity:1.6});
+
+for(var i=0;i<4;i++){
+  var topY=SH*(i+1);
+  var sz=-SD*i;
+
+  // 3 generators per step
+  for(var j=-1;j<=1;j++){
+    var gg=new THREE.Group();
+
+    // Main cylinder body
+    var gbody=cy(0.195,0.195,0.28,18,genBodyM);
+    gbody.position.y=topY-0.14;
+    gbody.userData={label:'Piezoelectric Generator',tip:'3 units per step × 4 steps = 12 generators. Each converts foot-pressure into ~3-5W AC.'};
+    interactable.push(gbody); gg.add(gbody);
+
+    // Shiny top cap (the contact surface)
+    var gcap=cy(0.195,0.195,0.048,18,genCapM);
+    gcap.position.y=topY-0.002; gg.add(gcap);
+
+    // Outer ring detail on cap
+    var gring=tor(0.16,0.015,sm(0x707030,0.3,0.5));
+    gring.position.y=topY-0.001; gring.rotation.x=Math.PI/2; gg.add(gring);
+
+    // Spring coils (8 rings, alternating tight/loose)
+    for(var k=0;k<8;k++){
+      var coil=cy(0.13,0.13,0.020,14,springM);
+      coil.position.y=topY-0.32-k*0.046; gg.add(coil);
+    }
+
+    // Mounting base plate
+    var gbp=bx(0.38,0.058,0.38,genBaseM);
+    gbp.position.y=topY-0.70; gg.add(gbp);
+    // 4 corner bolts
+    [[0.14,0.14],[0.14,-0.14],[-0.14,0.14],[-0.14,-0.14]].forEach(function(bo){
+      var bolt=cy(0.020,0.020,0.055,6,sm(0x888888,0.2,0.8));
+      bolt.position.set(bo[0],topY-0.648,bo[1]); gg.add(bolt);
+    });
+
+    gg.position.set(-2.5+j*1.62,0,sz);
+    G.generators.add(gg);
+  }
+
+  // ── GREEN LED strip on step front edge ──
+  var strip=bx(SW-0.10,0.050,0.082,ledEM);
+  strip.position.set(-2.5,topY+0.025,sz);
+  G.generators.add(strip);
+
+  // Green glow point light
+  var gl=new THREE.PointLight(0x00cc55,0.7,4.5);
+  gl.position.set(-2.5,topY+0.28,sz); G.generators.add(gl);
+}
+</script>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// 5. POWER MANAGEMENT UNIT (dark green cabinet)
+// ═══════════════════════════════════════════════════════
+(function(){
+  var pmu=new THREE.Group();
+  var cabM=sm(0x0c2818,0.48,0.14);
+  var glassM=new THREE.MeshStandardMaterial({color:0x99ddbb,roughness:0.04,metalness:0.18,transparent:true,opacity:0.28});
+
+  // Cabinet shell
+  var cab=bx(2.6,3.4,1.0,cabM);
+  cab.userData={label:'Power Management Unit',tip:'Rectifies AC from generators to DC, manages battery charging, prevents overload.'};
+  interactable.push(cab); pmu.add(cab);
+
+  // Cabinet sides (slightly lighter)
+  var sideM=sm(0x0f3020,0.5,0.1);
+  var sl=bx(0.04,3.4,1.0,sideM); sl.position.x=-1.28; pmu.add(sl);
+  var sr=bx(0.04,3.4,1.0,sideM); sr.position.x= 1.28; pmu.add(sr);
+
+  // Door frame recess
+  var frame=bx(2.25,3.05,0.07,sm(0x081810,0.45,0.2));
+  frame.position.set(0,0.12,0.51); pmu.add(frame);
+
+  // Glass viewing door
+  var door=bx(2.08,2.85,0.055,glassM);
+  door.position.set(0,0.12,0.555); pmu.add(door);
+
+  // PCB (green circuit board)
+  var pcbM=sm(0x1a5c22,0.38,0.12,0x003018,0.35);
+  var pcb=bx(1.85,2.25,0.11,pcbM); pcb.position.set(0,0.14,0.06); pmu.add(pcb);
+
+  // PCB trace lines
+  [[-0.5,0.8],[0.4,0.8],[-0.5,0.1],[0.4,0.1],[-0.5,-0.6],[0.4,-0.6],[0,-1.0]].forEach(function(a){
+    var chip=bx(0.25,0.15,0.13,sm(0x222200,0.28,0.55)); chip.position.set(a[0],a[1],0.25); pmu.add(chip);
+  });
+  // Capacitors (tall cylinders)
+  [[-0.2,0.55],[0.2,0.55],[-0.2,-0.05],[0.2,-0.05]].forEach(function(a){
+    var cap=cy(0.06,0.06,0.25,10,sm(0x3344bb,0.3,0.4)); cap.position.set(a[0],a[1],0.32); pmu.add(cap);
+    var ct=cy(0.06,0.06,0.02,10,sm(0x888888,0.2,0.6)); ct.position.set(a[0],a[1]+0.135,0.32); pmu.add(ct);
+  });
+  // Resistors/small components
+  for(var r=0;r<6;r++){
+    var res=bx(0.09,0.06,0.08,sm(0x994400,0.4,0.1)); res.position.set(-0.55+r*0.22,-0.9,0.24); pmu.add(res);
+  }
+  // PCB trace lines
+  for(var tl=0;tl<5;tl++){
+    var tr=bx(1.4,0.015,0.015,sm(0x00cc44,0.5,0.3,0x00cc44,0.3)); tr.position.set(0,-0.3+tl*0.22,0.22); pmu.add(tr);
+  }
+
+  // 3 LED status lights
+  [0xff1111,0x11ff11,0xffaa00].forEach(function(col,idx){
+    var indM=new THREE.MeshStandardMaterial({color:col,emissive:col,emissiveIntensity:2.0});
+    var ind=cy(0.048,0.048,0.075,10,indM); ind.rotation.x=Math.PI/2;
+    ind.position.set(-0.62+idx*0.32,1.12,0.575); pmu.add(ind);
+    // glow ring
+    var gr=new THREE.Mesh(new THREE.RingGeometry(0.055,0.09,12),new THREE.MeshBasicMaterial({color:col,transparent:true,opacity:0.3,side:THREE.DoubleSide}));
+    gr.position.set(-0.62+idx*0.32,1.12,0.576); gr.rotation.y=Math.PI/2; pmu.add(gr);
+  });
+
+  // Digital display
+  var scrM=new THREE.MeshStandardMaterial({color:0x00dd44,emissive:0x005820,emissiveIntensity:1.6,roughness:0.08});
+  var scr=bx(1.05,0.62,0.055,scrM); scr.position.set(0.18,0.88,0.575); pmu.add(scr);
+  // scan lines on display
+  for(var sl2=0;sl2<5;sl2++){
+    var sline=bx(0.90,0.04,0.01,sm(0x00ff66,0.5,0,0x00ff66,0.4)); sline.position.set(0.18,0.70+sl2*0.10,0.605); pmu.add(sline);
+  }
+
+  // Wiring connectors at bottom
+  for(var c=0;c<6;c++){
+    var conn=bx(0.14,0.20,0.14,sm(0x2a2a2a,0.4,0.3)); conn.position.set(-0.625+c*0.26,-1.48,0.24); pmu.add(conn);
+    var cpin=cy(0.03,0.03,0.12,6,sm(0xcccccc,0.2,0.8)); cpin.rotation.x=Math.PI/2; cpin.position.set(-0.625+c*0.26,-1.48,0.425); pmu.add(cpin);
+  }
+
+  // Door handle
+  var hdlM=sm(0xbbbbbb,0.18,0.92);
+  var hdl=bx(0.072,0.52,0.072,hdlM); hdl.position.set(1.01,0,0.575); pmu.add(hdl);
+  var hb=bx(0.072,0.072,0.14,hdlM); hb.position.set(1.01,0.25,0.56); pmu.add(hb);
+  var hb2=bx(0.072,0.072,0.14,hdlM); hb2.position.set(1.01,-0.25,0.56); pmu.add(hb2);
+
+  // Top label "POWER MANAGEMENT UNIT"
+  var lbl=bx(2.2,0.26,0.08,sm(0x155724,0.35,0,0x061408,0.55));
+  lbl.position.set(0,1.60,0.575); pmu.add(lbl);
+  var lt=bx(1.6,0.075,0.04,sm(0xffffff,0.7)); lt.position.set(0,1.64,0.615); pmu.add(lt);
+  var lt2=bx(1.2,0.065,0.04,sm(0xffffff,0.7)); lt2.position.set(0,1.56,0.615); pmu.add(lt2);
+
+  // Cabinet feet
+  [[-1.0,-1.5],[-1.0,1.5],[1.0,-1.5],[1.0,1.5]].forEach(function(f){
+    var ft=cy(0.08,0.08,0.12,8,sm(0x222222,0.4,0.3)); ft.position.set(f[0],-1.755,f[1]); pmu.add(ft);
+  });
+
+  pmu.position.set(5.2,1.72,-3.6);
+  G.powerBox.add(pmu);
+})();
+</script>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// 6. BATTERY STORAGE UNIT
+// ═══════════════════════════════════════════════════════
+(function(){
+  var bat=new THREE.Group();
+  var glassM=new THREE.MeshStandardMaterial({color:0x99ddbb,roughness:0.04,metalness:0.18,transparent:true,opacity:0.28});
+
+  var cas=bx(2.6,2.2,1.0,sm(0x141414,0.48,0.28));
+  cas.userData={label:'Battery Storage Unit',tip:'Deep-cycle Li-ion banks store harvested energy. Capacity: ~100Wh per bank.'};
+  interactable.push(cas); bat.add(cas);
+
+  // Inner shelf divider
+  var shelf=bx(2.4,0.06,0.90,sm(0x222222,0.4,0.2)); shelf.position.set(0,0.02,0); bat.add(shelf);
+
+  // 2 rows × 3 large cylindrical cells
+  for(var row=0;row<2;row++){
+    for(var col=0;col<3;col++){
+      var cell=cy(0.270,0.270,0.78,20,sm(0x22227a,0.38,0.55));
+      cell.rotation.z=Math.PI/2; cell.position.set(-0.54+col*0.54,0.44-row*0.72,0.06); bat.add(cell);
+      // positive cap
+      var cap=cy(0.270,0.270,0.062,20,sm(0x505050,0.28,0.72));
+      cap.rotation.z=Math.PI/2; cap.position.set(-0.54+col*0.54+0.42,0.44-row*0.72,0.06); bat.add(cap);
+      // label band
+      var band=cy(0.272,0.272,0.18,20,sm(0x3333aa,0.4,0.3));
+      band.rotation.z=Math.PI/2; band.position.set(-0.54+col*0.54,0.44-row*0.72,0.06); bat.add(band);
+    }
+  }
+
+  // + and – terminal posts on top
+  var tM=sm(0xcccccc,0.18,0.88);
+  var tp=cy(0.095,0.095,0.20,10,tM); tp.position.set(-0.52,1.20,0); bat.add(tp);
+  var tn=cy(0.095,0.095,0.20,10,tM); tn.position.set(0.52,1.20,0);  bat.add(tn);
+  // + symbol
+  var pb=bx(0.18,0.03,0.03,sm(0xffffff,0.5)); pb.position.set(-0.52,1.33,0); bat.add(pb);
+  var pb2=bx(0.03,0.18,0.03,sm(0xffffff,0.5)); pb2.position.set(-0.52,1.33,0); bat.add(pb2);
+  // – symbol
+  var nb=bx(0.18,0.03,0.03,sm(0xffffff,0.5)); nb.position.set(0.52,1.33,0); bat.add(nb);
+
+  // Safety vent holes top
+  for(var v=0;v<4;v++){
+    var vent=cy(0.045,0.045,0.04,8,sm(0x333333,0.5)); vent.position.set(-0.6+v*0.4,1.14,0.3); bat.add(vent);
+  }
+
+  // Glass front door
+  var gd=bx(2.28,1.88,0.055,glassM); gd.position.z=0.525; bat.add(gd);
+  var gframe=bx(2.44,2.04,0.07,sm(0x111111,0.45,0.2)); gframe.position.z=0.505; bat.add(gframe);
+  var gframe2=bx(2.28,1.88,0.055,glassM); gframe2.position.z=0.52; bat.add(gframe2);
+
+  // BATTERY STORAGE label
+  var bl=bx(2.1,0.26,0.08,sm(0x155724,0.35,0,0x061408,0.55));
+  bl.position.set(0,1.02,0.54); bat.add(bl);
+  var blt=bx(1.5,0.075,0.04,sm(0xffffff,0.7)); blt.position.set(0,1.06,0.58); bat.add(blt);
+  var blt2=bx(1.1,0.065,0.04,sm(0xffffff,0.7)); blt2.position.set(0,0.98,0.58); bat.add(blt2);
+
+  // Feet
+  [[-1.0,-0.4],[-1.0,0.4],[1.0,-0.4],[1.0,0.4]].forEach(function(f){
+    var ft=cy(0.08,0.08,0.10,8,sm(0x222222,0.4,0.3)); ft.position.set(f[0],-1.155,f[1]); bat.add(ft);
+  });
+
+  bat.position.set(5.2,1.08,0.45);
+  G.battery.add(bat);
+})();
+</script>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// 7. LED LIGHTING POLE – fully detailed
+// ═══════════════════════════════════════════════════════
+var lampLight;
+(function(){
+  var pole=new THREE.Group();
+  var poleM=sm(0x424242,0.38,0.68);
+  var darkM=sm(0x1e1e1e,0.38,0.55);
+
+  // Base anchor plate
+  var base=bx(0.65,0.12,0.65,poleM); base.position.y=0.06; pole.add(base);
+  // 4 anchor bolts
+  [[0.22,0.22],[0.22,-0.22],[-0.22,0.22],[-0.22,-0.22]].forEach(function(b){
+    var bolt=cy(0.025,0.025,0.10,8,sm(0xaaaaaa,0.2,0.8)); bolt.position.set(b[0],0.10,b[1]); pole.add(bolt);
+  });
+
+  // Main pole shaft (slightly tapered)
+  var shaft=cy(0.065,0.100,6.8,14,poleM); shaft.position.y=3.52; pole.add(shaft);
+
+  // Mounting collar
+  var collar=cy(0.13,0.13,0.18,14,poleM); collar.position.y=6.86; pole.add(collar);
+
+  // Outreach arm (curved approximated by 2 angled segments)
+  var arm1=cy(0.055,0.055,0.75,10,poleM);
+  arm1.rotation.z=-Math.PI/7; arm1.position.set(0.35,6.95,0); pole.add(arm1);
+  var arm2=cy(0.055,0.055,0.95,10,poleM);
+  arm2.rotation.z=Math.PI/2; arm2.position.set(1.0,7.10,0); pole.add(arm2);
+
+  // Lamp head housing (trapezoidal)
+  var hoodM=sm(0x1a1a1a,0.42,0.52);
+  var hood=bx(0.58,0.24,0.46,hoodM); hood.position.set(1.62,7.0,0);
+  hood.userData={label:'LED Street Light',tip:'100% powered by Smart Step. Zero grid electricity. ~15W LED, replaces 60W conventional bulb.'};
+  interactable.push(hood); pole.add(hood);
+
+  // Diffuser lens (glowing panel)
+  var bulbM=new THREE.MeshStandardMaterial({color:0xffee88,emissive:0xffcc44,emissiveIntensity:2.5,roughness:0.06});
+  var bulb=bx(0.50,0.10,0.38,bulbM); bulb.position.set(1.62,6.88,0); pole.add(bulb);
+
+  // Lens grid lines
+  for(var lg=0;lg<4;lg++){
+    var lgl=bx(0.01,0.09,0.36,sm(0xddcc66,0.5)); lgl.position.set(1.62-0.15+lg*0.10,6.88,0); pole.add(lgl);
+  }
+
+  // Point light from lamp
+  lampLight=new THREE.PointLight(0xffdd88,3.2,20);
+  lampLight.position.set(1.62,6.7,0); pole.add(lampLight);
+  // Spot cone (subtle)
+  var spotM=new THREE.MeshStandardMaterial({color:0xffee88,transparent:true,opacity:0.04,side:THREE.BackSide});
+  var spot=new THREE.Mesh(new THREE.ConeGeometry(1.8,3.5,16,1,true),spotM);
+  spot.position.set(1.62,5.1,0); pole.add(spot);
+
+  // Green info sign on pole
+  var signM=sm(0x155724,0.38,0,0x061408,0.55);
+  var pSign=bx(0.90,0.68,0.09,signM); pSign.position.set(0,4.5,0.14); pole.add(pSign);
+  // Lightbulb icon
+  var iconM=new THREE.MeshStandardMaterial({color:0xffee88,emissive:0xffcc00,emissiveIntensity:3.0});
+  var icon=sp(0.11,iconM); icon.position.set(0,4.90,0.20); pole.add(icon);
+  var ibase=cy(0.05,0.05,0.10,8,sm(0xcccccc,0.5)); ibase.position.set(0,4.75,0.20); pole.add(ibase);
+  // Sign text rows
+  var st1=bx(0.65,0.08,0.04,sm(0xffffff,0.7)); st1.position.set(0,4.52,0.20); pole.add(st1);
+  var st2=bx(0.55,0.07,0.04,sm(0xffffff,0.7)); st2.position.set(0,4.42,0.20); pole.add(st2);
+  var st3=bx(0.45,0.07,0.04,sm(0xffffff,0.7)); st3.position.set(0,4.32,0.20); pole.add(st3);
+
+  // Cable conduit running down pole
+  var cond=cy(0.022,0.022,5.5,8,sm(0x333333,0.5,0.2));
+  cond.position.set(0.07,3.0,0.105); pole.add(cond);
+
+  pole.position.set(8.5,0,-1.8);
+  G.ledPole.add(pole);
+})();
+</script>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// 8. SIGNAGE – all panels fully detailed
+// ═══════════════════════════════════════════════════════
+(function(){
+  var signGreen=sm(0x155724,0.38,0,0x061408,0.50);
+  var panelBg  =sm(0xf0ede5,0.90);
+  var textRow  =sm(0x888872,0.95);
+  var whiteM   =sm(0xffffff,0.70);
+  var darkFrame=sm(0x222222,0.50,0.15);
+
+  // ── LEFT OVERVIEW PANEL ──────────────────────────────
+  var lp=new THREE.Group();
+  var lpbg=bx(4.4,6.5,0.20,panelBg);
+  lpbg.userData={label:'Smart Step Overview Panel',tip:'Staircase-Based Power System for Renewable Energy Generation – Saint Joseph College.'};
+  interactable.push(lpbg); lp.add(lpbg);
+  // outer dark border
+  var ob=bx(4.54,6.64,0.22,darkFrame); ob.position.z=-0.01; lp.add(ob);
+  // re-add bg on top
+  lp.add(bx(4.4,6.5,0.21,panelBg));
+
+  // GREEN header strip
+  var hdr=bx(4.4,0.82,0.22,signGreen); hdr.position.set(0,2.84,0.01); lp.add(hdr);
+  // Header title text
+  var ht1=bx(2.6,0.12,0.04,whiteM); ht1.position.set(-0.4,2.94,0.14); lp.add(ht1);
+  var ht2=bx(2.0,0.10,0.04,whiteM); ht2.position.set(-0.4,2.80,0.14); lp.add(ht2);
+  var ht3=bx(2.4,0.09,0.04,sm(0xddeecc,0.7)); ht3.position.set(-0.4,2.68,0.14); lp.add(ht3);
+
+  // School logo circle (right of header)
+  var logo=new THREE.Mesh(new THREE.CircleGeometry(0.50,32),sm(0x1e7a3e,0.4,0,0x061208,0.5));
+  logo.position.set(1.75,2.84,0.14); lp.add(logo);
+  var ring1=tor(0.50,0.048,whiteM); ring1.position.set(1.75,2.84,0.15); lp.add(ring1);
+  var ring2=tor(0.38,0.030,sm(0xddeecc,0.5)); ring2.position.set(1.75,2.84,0.155); lp.add(ring2);
+  var lx=bx(0.50,0.04,0.04,whiteM); lx.position.set(1.75,2.84,0.16); lp.add(lx);
+  var ly=bx(0.04,0.50,0.04,whiteM); ly.position.set(1.75,2.84,0.16); lp.add(ly);
+
+  // Sub-header dark green strip
+  var sub=bx(4.4,0.38,0.21,sm(0x1a4828,0.4,0,0x081410,0.3));
+  sub.position.set(0,2.25,0.01); lp.add(sub);
+  var st=bx(3.2,0.10,0.04,sm(0xaaccaa,0.7)); st.position.set(0,2.25,0.14); lp.add(st);
+
+  // OVERVIEW section
+  var ovH=bx(1.6,0.22,0.08,signGreen); ovH.position.set(-1.2,1.84,0.12); lp.add(ovH);
+  var ovHt=bx(1.2,0.075,0.04,whiteM); ovHt.position.set(-1.2,1.84,0.17); lp.add(ovHt);
+  for(var r=0;r<4;r++){
+    var row=bx(3.8-(r%2)*0.5,0.08,0.04,textRow);
+    row.position.set(-0.1,1.62-r*0.22,0.13); lp.add(row);
+  }
+
+  // KEY FEATURES section
+  var kfH=bx(1.9,0.22,0.08,signGreen); kfH.position.set(-1.0,0.72,0.12); lp.add(kfH);
+  var kfHt=bx(1.5,0.075,0.04,whiteM); kfHt.position.set(-1.0,0.72,0.17); lp.add(kfHt);
+  var featureIcons=['🏃','🌿','💡','♻️'];
+  for(var r=0;r<4;r++){
+    // icon circle
+    var ic=new THREE.Mesh(new THREE.CircleGeometry(0.12,14),sm(0x155724,0.5));
+    ic.position.set(-1.75,0.48-r*0.36,0.13); lp.add(ic);
+    var ib=tor(0.12,0.018,whiteM); ib.position.set(-1.75,0.48-r*0.36,0.14); lp.add(ib);
+    // text bar
+    var fb=bx(2.4,0.08,0.04,textRow); fb.position.set(-0.3,0.48-r*0.36,0.13); lp.add(fb);
+    var fb2=bx(1.8,0.06,0.04,sm(0x777760,0.95)); fb2.position.set(-0.3,0.38-r*0.36,0.13); lp.add(fb2);
+  }
+
+  // BENEFITS section
+  var bH=bx(1.5,0.22,0.08,signGreen); bH.position.set(-1.1,-0.85,0.12); lp.add(bH);
+  var bHt=bx(1.1,0.075,0.04,whiteM); bHt.position.set(-1.1,-0.85,0.17); lp.add(bHt);
+  for(var r=0;r<4;r++){
+    var bullet=bx(0.08,0.08,0.04,signGreen); bullet.position.set(-1.78,-1.06-r*0.30,0.13); lp.add(bullet);
+    var br=bx(2.8,0.08,0.04,textRow); br.position.set(-0.2,-1.06-r*0.30,0.13); lp.add(br);
+  }
+
+  // Left panel – flat against back wall, facing forward (+Z direction)
+  lp.position.set(-5.0, 3.24, -10.2);
+  lp.rotation.y = 0;  // face forward, no angle
+  G.signage.add(lp);
+
+  // ── RIGHT INSTITUTION PANEL ──────────────────────────
+  var rp=new THREE.Group();
+  var rpbg=bx(3.4,4.8,0.20,panelBg);
+  rpbg.userData={label:'Saint Joseph College of Rosario Batangas Inc.',tip:'"Sustainable Step Towards a Greener Future" – Smart Step project display.'};
+  interactable.push(rpbg); rp.add(rpbg);
+  var rob=bx(3.54,4.94,0.22,darkFrame); rob.position.z=-0.01; rp.add(rob);
+  rp.add(bx(3.4,4.8,0.21,panelBg));
+
+  // Header
+  var rH=bx(3.4,0.78,0.22,signGreen); rH.position.set(0,2.01,0.01); rp.add(rH);
+  var rLogo=new THREE.Mesh(new THREE.CircleGeometry(0.42,32),sm(0x1e7a3e,0.4,0,0x061208,0.5));
+  rLogo.position.set(1.22,2.01,0.14); rp.add(rLogo);
+  var rRing=tor(0.42,0.042,whiteM); rRing.position.set(1.22,2.01,0.15); rp.add(rRing);
+  var rx=bx(0.46,0.04,0.04,whiteM); rx.position.set(1.22,2.01,0.16); rp.add(rx);
+  var ry=bx(0.04,0.46,0.04,whiteM); ry.position.set(1.22,2.01,0.16); rp.add(ry);
+  var rht=bx(1.7,0.11,0.04,whiteM); rht.position.set(0.0,2.11,0.14); rp.add(rht);
+  var rht2=bx(1.5,0.10,0.04,whiteM); rht2.position.set(0.0,1.99,0.14); rp.add(rht2);
+  var rht3=bx(1.3,0.09,0.04,sm(0xddeecc,0.7)); rht3.position.set(0.0,1.87,0.14); rp.add(rht3);
+
+  // Body text rows
+  for(var r=0;r<8;r++){
+    var rrow=bx(2.9-(r%3===0?0.4:0.0),0.08,0.04,textRow);
+    rrow.position.set(0,1.45-r*0.36,0.13); rp.add(rrow);
+  }
+
+  // Bottom "SUSTAINABLE STEP..." banner
+  var ssb=bx(3.4,0.52,0.12,signGreen); ssb.position.set(0,-2.14,0.08); rp.add(ssb);
+  var sst=bx(2.6,0.095,0.04,whiteM); sst.position.set(0,-2.10,0.15); rp.add(sst);
+  var sst2=bx(2.1,0.085,0.04,sm(0xddeecc,0.7)); sst2.position.set(0,-2.22,0.15); rp.add(sst2);
+
+  // Right panel – flat against right side wall, facing left (-X direction)
+  rp.position.set(11.0, 2.85, -4.5);
+  rp.rotation.y = -Math.PI / 2;  // face inward (left)
+  G.signage.add(rp);
+
+  // ── "GENERATE POWER" OVERHEAD SIGN ──────────────────
+  var gs=new THREE.Group();
+  var gsBody=bx(3.2,0.72,0.16,signGreen); gs.add(gsBody);
+  // Walking man icon (circle head + body bar)
+  var head=sp(0.13,whiteM); head.position.set(-1.25,0.18,0.10); gs.add(head);
+  var body2=bx(0.07,0.24,0.07,whiteM); body2.position.set(-1.25,-0.02,0.10); gs.add(body2);
+  var legL=bx(0.06,0.22,0.06,whiteM); legL.rotation.z=0.4; legL.position.set(-1.20,-0.26,0.10); gs.add(legL);
+  var legR=bx(0.06,0.22,0.06,whiteM); legR.rotation.z=-0.3; legR.position.set(-1.30,-0.26,0.10); gs.add(legR);
+  // "GENERATE POWER" text rows
+  var gt1=bx(1.8,0.10,0.04,whiteM); gt1.position.set(0.3,0.14,0.10); gs.add(gt1);
+  var gt2=bx(1.4,0.09,0.04,whiteM); gt2.position.set(0.3,0.00,0.10); gs.add(gt2);
+  // Down arrows
+  for(var a=0;a<3;a++){
+    var arB=bx(0.09,0.28,0.05,whiteM); arB.position.set(-0.3+a*0.38,-0.22,0.10); gs.add(arB);
+    // arrowhead (triangle)
+    var arH=new THREE.Mesh(new THREE.ConeGeometry(0.08,0.12,6),new THREE.MeshStandardMaterial({color:0xffffff}));
+    arH.rotation.z=Math.PI; arH.position.set(-0.3+a*0.38,-0.41,0.10); gs.add(arH);
+  }
+  // Support rods – mounted from platform up to sign
+  var rod1=cy(0.04,0.04,6.55,8,sm(0x1a1a1a,0.4,0.5)); rod1.position.set(-2.5+1.2,3.28,-5.5);
+  var rod2=cy(0.04,0.04,6.55,8,sm(0x1a1a1a,0.4,0.5)); rod2.position.set(-2.5-1.2,3.28,-5.5);
+  G.signage.add(rod1); G.signage.add(rod2);
+
+  gs.position.set(-2.5, 6.55, -5.5);
+  G.signage.add(gs);
+
+  // Cable conduits on back wall (flush at z=-10.38)
+  var condM=sm(0x333333,0.5,0.2);
+  var cond1=bx(0.06,3.2,0.06,condM); cond1.position.set(3.8,1.8,-10.38); G.signage.add(cond1);
+  var cond2=bx(2.8,0.06,0.06,condM); cond2.position.set(4.5,3.4,-10.38); G.signage.add(cond2);
+})();
+</script>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// 9. TREES
+// ═══════════════════════════════════════════════════════
+function mkTree(x,z,s){
+  s=s||1; var t=new THREE.Group();
+  var trM=sm(0x3d2000,0.9,0.05);
+  var foM=new THREE.MeshStandardMaterial({color:0x1e6624,roughness:0.82});
+  var trunk=cy(0.13*s,0.19*s,1.4*s,10,trM); trunk.position.y=0.70*s; trunk.castShadow=true; t.add(trunk);
+  var rootF=cy(0.22*s,0.26*s,0.12,10,trM); rootF.position.y=0.06; t.add(rootF);
+  // layered foliage
+  [[0.82,0.80],[0.66,1.48],[0.48,2.12],[0.32,2.62]].forEach(function(a){
+    var f=new THREE.Mesh(new THREE.SphereGeometry(a[0]*s,9,7),foM);
+    f.scale.y=0.78; f.position.y=a[1]*s; f.castShadow=true; t.add(f);
+  });
+  t.position.set(x,0,z); G.trees.add(t);
+}
+mkTree(8.5, 2.4);
+mkTree(7.6,-5.5, 0.76);
+mkTree(-8.0,-6.0, 0.82);
+
+// ═══════════════════════════════════════════════════════
+// 10. WIRE CONDUIT RUNS
+// ═══════════════════════════════════════════════════════
+// Green wires: generators → PMU
+root.add(wire([[0.5,1.0,-1.5],[3.9,1.0,-1.5],[3.9,1.72,-3.6]],0x00ff44));
+root.add(wire([[-2.5,SH*2,0],[0,SH*2,0],[0,1.0,-1.5]],0x00ff44));
+// Yellow: PMU → Battery
+root.add(wire([[5.2,0.5,-2.8],[5.2,0.5,-0.2]],0xffcc00));
+// Yellow: Battery → LED pole
+root.add(wire([[6.5,0.4,0.45],[8.5,0.4,0.45],[8.5,0.65,-1.8]],0xffcc00));
+
+// ═══════════════════════════════════════════════════════
+// 11. ENERGY PARTICLES
+// ═══════════════════════════════════════════════════════
+var NP=350;
+var pBuf=new Float32Array(NP*3);
+var pVel=[];
+for(var i=0;i<NP;i++){
+  pBuf[i*3]  =(Math.random()-0.5)*SW-2.5;
+  pBuf[i*3+1]=Math.random()*2.8;
+  pBuf[i*3+2]=-(Math.random()*SD*4);
+  pVel.push({x:(Math.random()-0.5)*0.022,y:0.018+Math.random()*0.046,z:(Math.random()-0.5)*0.012});
+}
+var pGeo=new THREE.BufferGeometry();
+pGeo.setAttribute('position',new THREE.BufferAttribute(pBuf,3));
+var particles=new THREE.Points(pGeo,new THREE.PointsMaterial({
+  color:0x00ff66,size:0.11,sizeAttenuation:true,
+  transparent:true,opacity:0.90,blending:THREE.AdditiveBlending,depthWrite:false
+}));
+particles.visible=false; scene.add(particles);
+
+// ═══════════════════════════════════════════════════════
+// 12. RAYCASTER TOOLTIP
+// ═══════════════════════════════════════════════════════
+var raycaster=new THREE.Raycaster();
+var mouse=new THREE.Vector2(-9999,-9999);
+var tipEl=document.getElementById('tip');
+renderer.domElement.addEventListener('mousemove',function(e){
+  mouse.x=(e.clientX/window.innerWidth)*2-1;
+  mouse.y=-(e.clientY/window.innerHeight)*2+1;
+  tipEl.style.left=(e.clientX+14)+'px'; tipEl.style.top=(e.clientY-12)+'px';
+});
+</script>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// 13. STATE & BUTTONS
+// ═══════════════════════════════════════════════════════
+var autoRot=true, exploded=false, nightMode=false;
+var stepCount=0, stepFlash=0, battery=45, ledOut=30;
+
+var explodeOff={
+  base:      [0,-2.2,0],
+  stairs:    [-5.0,0,-4.0],
+  railings:  [0,4.0,0],
+  generators:[0,-4.0,0],
+  powerBox:  [5.0,2.2,4.0],
+  battery:   [5.0,-2.2,5.0],
+  ledPole:   [6.5,0,-5.0],
+  signage:   [-6.0,4.0,5.5],
+  trees:     [8.0,0,7.0],
+};
+var tmpV=new THREE.Vector3();
+function lerpG(k){ var o=exploded?explodeOff[k]:[0,0,0]; G[k].position.lerp(tmpV.set(o[0],o[1],o[2]),0.06); }
+
+function gEl(id){return document.getElementById(id);}
+
+gEl('bRot').addEventListener('click',function(){ autoRot=!autoRot; gEl('bRot').classList.toggle('on',autoRot); });
+gEl('bExp').addEventListener('click',function(){
+  exploded=!exploded; gEl('bExp').classList.toggle('on',exploded);
+  gEl('bExp').textContent=exploded?'🔗 Assemble':'💥 Explode';
+});
+gEl('bStep').addEventListener('click',function(){
+  stepCount++; stepFlash=58;
+  battery=Math.min(100,battery+2.5); ledOut=Math.min(100,ledOut+4);
+  gEl('sc').textContent=stepCount;
+  particles.visible=true;
+  setTimeout(function(){particles.visible=false;},2200);
+  stepGroups[(stepCount-1)%4]._bounce=16;
+});
+gEl('bNight').addEventListener('click',function(){
+  nightMode=!nightMode; gEl('bNight').classList.toggle('on',nightMode);
+  gEl('bNight').textContent=nightMode?'☀️ Day':'🌙 Night';
+  scene.background.set(nightMode?0x010408:0x0d1824);
+  ambient.intensity=nightMode?0.06:0.52; sun.intensity=nightMode?0.0:1.9;
+  if(lampLight) lampLight.intensity=nightMode?8.0:3.2;
+  G.generators.traverse(function(o){
+    if(o.isMesh&&o.material&&o.material.emissive){
+      var h=o.material.emissive.getHex();
+      if(h===0x00cc55) o.material.emissiveIntensity=nightMode?4.0:1.6;
+    }
+  });
+});
+gEl('bReset').addEventListener('click',function(){
+  camera.position.set(14,12,18); ctrl.target.set(1,3,-3);
+  exploded=false; gEl('bExp').classList.remove('on'); gEl('bExp').textContent='💥 Explode';
+  Object.keys(explodeOff).forEach(function(k){G[k].position.set(0,0,0);});
+});
+
+// ═══════════════════════════════════════════════════════
+// 14. ANIMATION LOOP
+// ═══════════════════════════════════════════════════════
+var clock=new THREE.Clock();
+function animate(){
+  requestAnimationFrame(animate);
+  var t=clock.getElapsedTime();
+
+  if(autoRot) root.rotation.y+=0.0025;
+  Object.keys(explodeOff).forEach(lerpG);
+
+  // Step bounce animation
+  stepGroups.forEach(function(sg){
+    if(sg._bounce>0){ sg.position.y=-Math.abs(Math.sin(sg._bounce*0.36))*0.20; sg._bounce--; }
+    else { sg.position.y=0; }
+  });
+
+  // Particle flow
+  if(particles.visible){
+    var pa=particles.geometry.attributes.position.array;
+    for(var i=0;i<NP;i++){
+      pa[i*3]+=pVel[i].x; pa[i*3+1]+=pVel[i].y; pa[i*3+2]+=pVel[i].z;
+      if(pa[i*3+1]>3.5){ pa[i*3]=(Math.random()-0.5)*SW-2.5; pa[i*3+1]=0; pa[i*3+2]=-(Math.random()*SD*4); }
+    }
+    particles.geometry.attributes.position.needsUpdate=true;
+  }
+
+  if(stepFlash>0) stepFlash--;
+  if(nightMode&&lampLight) lampLight.intensity=8.0+Math.sin(t*11)*0.30;
+
+  // Meters
+  gEl('mk').style.width=(stepFlash>0?Math.min(100,stepFlash*1.8)+'%':'0%');
+  battery=Math.min(100,battery+0.004);
+  gEl('mb').style.width=battery.toFixed(1)+'%';
+  gEl('mo').style.width=Math.min(100,24+Math.sin(t*0.82)*8+(battery>50?22:7)).toFixed(1)+'%';
+
+  // Tooltip
+  raycaster.setFromCamera(mouse,camera);
+  var hits=raycaster.intersectObjects(interactable,false);
+  if(hits.length){ tipEl.style.display='block'; tipEl.innerHTML='<b>'+hits[0].object.userData.label+'</b><br>'+hits[0].object.userData.tip; }
+  else { tipEl.style.display='none'; }
+
+  ctrl.update();
+  renderer.render(scene,camera);
+}
+
+window.addEventListener('resize',function(){
+  camera.aspect=window.innerWidth/window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth,window.innerHeight);
+});
+
+animate();
+</script>
+</body>
+</html>

@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Jayden Website</title>
+  <link rel="stylesheet" href="style.css" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+</head>
+<body>
+
+  <!-- Snow canvas -->
+  <canvas id="snow-canvas"></canvas>
+
+  <!-- Floating polaroid cards -->
+  <div class="polaroid-bg" aria-hidden="true">
+    <div class="polar p1"><div class="polar-inner"><i class="fas fa-person-skating"></i></div><span>-- ESTO QUAD ES --</span></div>
+    <div class="polar p2"><div class="polar-inner graffiti">NAKSA</div><span>WE SNEEZE A LIL DIFFERENT..</span></div>
+    <div class="polar p3"><div class="polar-inner"><i class="fas fa-crow"></i></div><span>STUDY THE ART OF SCIENCE.</span></div>
+    <div class="polar p4"><div class="polar-inner small-txt">INSIDE</div><span></span></div>
+    <div class="polar p5"><div class="polar-inner"><i class="fas fa-cat"></i></div><span></span></div>
+    <div class="polar p6"><div class="polar-inner"><i class="fas fa-seedling"></i></div><span></span></div>
+  </div>
+
+  <!-- NAVBAR -->
+  <nav class="navbar">
+    <div class="logo">Portfolio<span>.</span></div>
+    <ul class="nav-links">
+      <li><a href="#home" class="active">Home</a></li>
+      <li><a href="#about">About</a></li>
+      <li><a href="#services">Services</a></li>
+      <li><a href="#portfolio">Portfolio</a></li>
+      <li><a href="#arduino">Arduino</a></li>
+      <li><a href="#contact">Contact</a></li>
+    </ul>
+    <div class="hamburger" id="hamburger">
+      <span></span><span></span><span></span>
+    </div>
+  </nav>
+
+  <!-- HOME SECTION -->
+  <section class="hero" id="home">
+    <div class="hero-text">
+      <p class="greeting">Hello, <span class="red">I am</span></p>
+      <h1 class="name">Jayden Caile Ramos</h1>
+      <h2 class="title-text">Jayden <span class="red">Website</span></h2>
+      <p class="bio">Baliw Lang.</p>
+      <div class="social-icons">
+        <a href="https://www.instagram.com/1heycai/" target="_blank" title="Instagram">
+          <i class="fab fa-instagram"></i>
+        </a>
+        <a href="https://www.facebook.com/profile.php?id=61582699296852" target="_blank" title="Facebook">
+          <i class="fab fa-facebook-f"></i>
+        </a>
+      </div>
+      <a href="#about" class="btn">Know More</a>
+    </div>
+    <div class="hero-image">
+      <div class="img-wrapper">
+        <img src="profile.jpg.jpg" alt="Jayden Caile Ramos" />
+      </div>
+    </div>
+  </section>
+
+  <!-- ABOUT SECTION -->
+  <section class="section" id="about">
+    <h2 class="section-title">About <span class="red">Me</span></h2>
+    <div class="about-container">
+      <div class="about-img">
+        <div class="img-wrapper small">
+          <img src="profile.jpg.jpg" alt="Jayden" />
+        </div>
+      </div>
+      <div class="about-text">
+        <h3>Hi, I'm <span class="red">Jayden Caile Ramos</span></h3>
+        <p>Baliw Lang.</p>
+        <div class="info-grid">
+          <div><span class="label">Name:</span> Jayden Caile Ramos</div>
+          <div><span class="label">Website:</span> Jayden Website</div>
+          <div><span class="label">Instagram:</span> <a href="https://www.instagram.com/1heycai/" target="_blank" class="red">@1heycai</a></div>
+          <div><span class="label">Status:</span> Baliw Lang 😂</div>
+        </div>
+        <a href="#contact" class="btn">Contact Me</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- SERVICES SECTION -->
+  <section class="section dark-section" id="services">
+    <h2 class="section-title">My <span class="red">Services</span></h2>
+    <div class="services-grid">
+      <div class="service-card">
+        <i class="fas fa-code"></i>
+        <h3>Web Development</h3>
+        <p>Building modern, responsive websites that look great on all devices.</p>
+      </div>
+      <div class="service-card">
+        <i class="fas fa-paint-brush"></i>
+        <h3>Web Design</h3>
+        <p>Creating stunning UI/UX designs with clean and creative aesthetics.</p>
+      </div>
+      <div class="service-card">
+        <i class="fas fa-mobile-alt"></i>
+        <h3>App Development</h3>
+        <p>Developing powerful and smooth mobile applications.</p>
+      </div>
+      <div class="service-card">
+        <i class="fas fa-search"></i>
+        <h3>SEO Optimization</h3>
+        <p>Helping your website rank higher on search engines.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- PORTFOLIO SECTION -->
+  <section class="section" id="portfolio">
+    <h2 class="section-title">My <span class="red">Portfolio</span></h2>
+    <div class="portfolio-grid">
+
+      <div class="portfolio-card featured-card">
+        <div class="portfolio-img rfid-thumb">
+          <img src="bookshelf.jpg" alt="RFID Smart Bookshelf" class="project-thumb" />
+          <span class="badge-tag">3D Interactive</span>
+        </div>
+        <div class="portfolio-info">
+          <h3>RFID Smart Bookshelf</h3>
+          <p>An interactive 3D model of a 4-row intelligent library system with RFID book tracking using PN5180 readers at 13.56 MHz.</p>
+          <div class="tech-tags"><span>Three.js</span><span>RFID</span><span>ESP32</span><span>3D WebGL</span></div>
+          <a href="indexx.html" target="_blank" class="btn btn-sm">View Project →</a>
+        </div>
+      </div>
+
+      <div class="portfolio-card featured-card">
+        <div class="portfolio-img rfid-thumb">
+          <div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;background:linear-gradient(135deg,#1a1a1a,#2a1a0a);font-size:3rem;">🔥</div>
+          <span class="badge-tag">3D Interactive</span>
+        </div>
+        <div class="portfolio-info">
+          <h3>Bioethanol Fireplace</h3>
+          <p>An interactive 3D model of a bioethanol fireplace featuring exploded view, animated flame simulation, and labeled components.</p>
+          <div class="tech-tags"><span>Three.js</span><span>WebGL</span><span>3D Model</span><span>Animation</span></div>
+          <a href="indexxx.html" target="_blank" class="btn btn-sm">View Project →</a>
+        </div>
+      </div>
+
+      <div class="portfolio-card featured-card">
+        <div class="portfolio-img rfid-thumb">
+          <div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;background:linear-gradient(135deg,#080f1e,#0d2244);font-size:3rem;">💧</div>
+          <span class="badge-tag">3D Interactive</span>
+        </div>
+        <div class="portfolio-info">
+          <h3>HYDROSPARK 3D</h3>
+          <p>A smart rainwater microhydro charger 3D model with interactive component inspection, live status panel, and turbine animation.</p>
+          <div class="tech-tags"><span>Three.js</span><span>WebGL</span><span>3D Model</span><span>IoT</span></div>
+          <a href="renz.html" target="_blank" class="btn btn-sm">View Project →</a>
+        </div>
+      </div>
+
+      <div class="portfolio-card featured-card">
+        <div class="portfolio-img rfid-thumb">
+          <div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;background:linear-gradient(135deg,#0c0d18,#091c2c);font-size:3rem;">🗑️</div>
+          <span class="badge-tag">3D Interactive</span>
+        </div>
+        <div class="portfolio-info">
+          <h3>Smart Waste Bin</h3>
+          <p>An interactive 3D model of a smart waste bin with animated lid, bio/recyclable/residual sorting modes, and real-time status panel.</p>
+          <div class="tech-tags"><span>Three.js</span><span>WebGL</span><span>3D Model</span><span>Smart Tech</span></div>
+          <a href="jeril.html" target="_blank" class="btn btn-sm">View Project →</a>
+        </div>
+      </div>
+
+      <div class="portfolio-card featured-card">
+        <div class="portfolio-img rfid-thumb">
+          <div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;background:linear-gradient(135deg,#0a0f1e,#0d2618);font-size:3rem;">👟</div>
+          <span class="badge-tag">3D Interactive</span>
+        </div>
+        <div class="portfolio-info">
+          <h3>Smart Step</h3>
+          <p>An interactive 3D model of a smart step system featuring real-time energy meters and component inspection with animated sensors.</p>
+          <div class="tech-tags"><span>Three.js</span><span>WebGL</span><span>3D Model</span><span>Smart Tech</span></div>
+          <a href="smartstep.html" target="_blank" class="btn btn-sm">View Project →</a>
+        </div>
+      </div>
+
+      <div class="portfolio-card featured-card">
+        <div class="portfolio-img rfid-thumb">
+          <div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;background:linear-gradient(135deg,#0d1117,#0a1f0a);font-size:3rem;">🦯</div>
+          <span class="badge-tag">3D Interactive</span>
+        </div>
+        <div class="portfolio-info">
+          <h3>Smart Blind Stick Pro</h3>
+          <p>A 3D exploded view of a smart blind stick with interactive component annotations and animated assembly breakdown.</p>
+          <div class="tech-tags"><span>Three.js</span><span>WebGL</span><span>3D Model</span><span>IoT</span></div>
+          <a href="justine.html" target="_blank" class="btn btn-sm">View Project →</a>
+        </div>
+      </div>
+
+      <div class="portfolio-card featured-card">
+        <div class="portfolio-img rfid-thumb">
+          <div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;background:linear-gradient(135deg,#0a0f1a,#0d2233);font-size:3rem;">🗜️</div>
+          <span class="badge-tag">3D Interactive</span>
+        </div>
+        <div class="portfolio-info">
+          <h3>Smart Waste Compactor</h3>
+          <p>An interactive 3D model of a smart waste compactor featuring animated compression mechanism and real-time HUD stats.</p>
+          <div class="tech-tags"><span>Three.js</span><span>WebGL</span><span>3D Model</span><span>Smart Tech</span></div>
+          <a href="godwim.html" target="_blank" class="btn btn-sm">View Project →</a>
+        </div>
+      </div>
+
+      <div class="portfolio-card featured-card">
+        <div class="portfolio-img rfid-thumb">
+          <div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;background:linear-gradient(135deg,#667eea,#764ba2);font-size:3rem;">💧</div>
+          <span class="badge-tag">3D Interactive</span>
+        </div>
+        <div class="portfolio-info">
+          <h3>Gravity Water Filtration System</h3>
+          <p>An interactive 3D model of a gravity-friendly water filtration system showcasing layered filtration stages.</p>
+          <div class="tech-tags"><span>Three.js</span><span>WebGL</span><span>3D Model</span><span>Engineering</span></div>
+          <a href="jr.html" target="_blank" class="btn btn-sm">View Project →</a>
+        </div>
+      </div>
+
+      <div class="portfolio-card featured-card">
+        <div class="portfolio-img rfid-thumb">
+          <div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;background:linear-gradient(135deg,#0e1014,#1a1f28);font-size:3rem;">🛒</div>
+          <span class="badge-tag">3D Interactive</span>
+        </div>
+        <div class="portfolio-info">
+          <h3>DustCart Pro</h3>
+          <p>An interactive 3D viewer of a professional dust cart with component inspection, explode view, and mobile-optimized touch controls.</p>
+          <div class="tech-tags"><span>Three.js</span><span>WebGL</span><span>3D Model</span><span>Mobile</span></div>
+          <a href="dust.html" target="_blank" class="btn btn-sm">View Project →</a>
+        </div>
+      </div>
+
+      <div class="portfolio-card featured-card">
+        <div class="portfolio-img rfid-thumb">
+          <div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;background:linear-gradient(135deg,#111a11,#1a2e1a);font-size:3rem;">♻️</div>
+          <span class="badge-tag">3D Interactive</span>
+        </div>
+        <div class="portfolio-info">
+          <h3>FRESHBIN</h3>
+          <p>An interactive 3D viewer of a smart fresh bin waste management system with animated components.</p>
+          <div class="tech-tags"><span>Three.js</span><span>WebGL</span><span>3D Model</span><span>Smart Tech</span></div>
+          <a href="pauline.html" target="_blank" class="btn btn-sm">View Project →</a>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ARDUINO SECTION -->
+  <section class="section dark-section" id="arduino">
+    <h2 class="section-title">Arduino <span class="red">Projects</span></h2>
+    <div class="portfolio-grid">
+      <div class="portfolio-card featured-card">
+        <div class="portfolio-img rfid-thumb">
+          <div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;background:linear-gradient(135deg,#dde1e7,#b0b4bb);font-size:3rem;">🔌</div>
+          <span class="badge-tag">Interactive</span>
+        </div>
+        <div class="portfolio-info">
+          <h3>Arduino UNO – LCD Kalapastangan</h3>
+          <p>An interactive visual demo of an Arduino UNO board wired to an LCD display, showcasing the Kalapastangan project circuit.</p>
+          <div class="tech-tags"><span>Arduino</span><span>LCD</span><span>CSS 3D</span><span>Hardware</span></div>
+          <a href="arduino.html" target="_blank" class="btn btn-sm">View Project →</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CONTACT SECTION -->
+  <section class="section dark-section" id="contact">
+    <h2 class="section-title">Contact <span class="red">Me</span></h2>
+    <div class="contact-container">
+      <div class="contact-info">
+        <div class="contact-item">
+          <i class="fab fa-instagram red"></i>
+          <a href="https://www.instagram.com/1heycai/" target="_blank">@1heycai</a>
+        </div>
+        <div class="contact-item">
+          <i class="fab fa-facebook-f red"></i>
+          <a href="https://www.facebook.com/profile.php?id=61582699296852" target="_blank">Jayden Caile Ramos</a>
+        </div>
+      </div>
+      <form class="contact-form" action="https://formspree.io/f/xykqrdze" method="POST">
+        <input type="text" name="name" placeholder="Your Name" required />
+        <input type="email" name="email" placeholder="Your Email" required />
+        <textarea name="message" placeholder="Your Message" rows="5" required></textarea>
+        <button type="submit" class="btn">Send Message</button>
+      </form>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <p>© 2025 <span class="red">Jayden Caile Ramos</span>. All Rights Reserved.</p>
+  </footer>
+
+  <!-- BACKGROUND MUSIC PLAYER -->
+  <div id="music-player">
+    <button id="music-btn" onclick="toggleMusic()" title="Toggle Music">
+      <i class="fas fa-music" id="music-icon"></i>
+    </button>
+    <span id="music-label">♪ bye (slowed)</span>
+  </div>
+
+  <!-- HTML5 Audio -->
+  <audio id="bg-music" loop preload="auto">
+    <source src="music.mp3" type="audio/mpeg">
+  </audio>
+
+  <!-- LOBBY SYSTEM -->
+  <div id="music-overlay">
+
+    <!-- Full screen video background -->
+    <video id="lobby-video" autoplay muted loop playsinline>
+      <source src="shi1.mp4" type="video/mp4">
+    </video>
+
+    <!-- Dark overlay -->
+    <div id="lobby-overlay"></div>
+
+    <!-- Scanlines -->
+    <div id="lobby-scanlines"></div>
+
+    <!-- Top bar -->
+    <div id="lobby-top">
+      <div id="lobby-top-left">
+        <span id="lobby-logo">JAY WEBSITE</span>
+        <span id="lobby-tagline">Portfolio System · 2025</span>
+      </div>
+      <div id="lobby-top-right">
+        <span id="lobby-dot"></span>
+        <span id="lobby-status">ONLINE</span>
+      </div>
+    </div>
+
+    <!-- Corner brackets -->
+    <div class="lb-corner lb-tl"></div>
+    <div class="lb-corner lb-tr"></div>
+    <div class="lb-corner lb-bl"></div>
+    <div class="lb-corner lb-br"></div>
+
+    <!-- Center -->
+    <div id="lobby-center">
+      <img id="lobby-spin" src="spin.webp" alt="spin" />
+      <div id="lobby-name-sub">Jayden Caile Ramos · Web Developer</div>
+    </div>
+
+    <!-- Bottom bar -->
+    <div id="lobby-bottom">
+      <div id="lobby-track">
+        <div id="lobby-disc"><div id="lobby-disc-hole"></div></div>
+        <div id="lobby-track-info">
+          <div id="lobby-track-title">bye (slowed)</div>
+          <div id="lobby-track-artist">Ariana Grande</div>
+        </div>
+        <div id="lobby-eq">
+          <span></span><span></span><span></span><span></span><span></span>
+        </div>
+      </div>
+      <button id="overlay-btn" onclick="overlayPlay()">
+        <svg viewBox="0 0 16 16" fill="currentColor" width="11" height="11"><path d="M3 2l10 6-10 6V2z"/></svg>
+        ENTER SITE
+      </button>
+    </div>
+
+  </div>
+
+  <script src="script.js"></script>
+
+  <!-- INTERACTION EFFECTS -->
+  <script>
+  (function () {
+    'use strict';
+
+    /* ── Inject cursor + effect CSS ── */
+    const s = document.createElement('style');
+    s.textContent = `
+      #cursor-dot {
+        position:fixed;top:0;left:0;z-index:99999;
+        width:8px;height:8px;border-radius:50%;
+        background:#7eb8d4;pointer-events:none;
+        transform:translate(-50%,-50%);will-change:left,top;
+      }
+      #cursor-ring {
+        position:fixed;top:0;left:0;z-index:99998;
+        width:28px;height:28px;border-radius:50%;
+        border:2px solid rgba(126,184,212,0.7);pointer-events:none;
+        transform:translate(-50%,-50%);will-change:left,top;
+        transition:width .2s,height .2s,border-color .2s,box-shadow .2s;
+      }
+      #cursor-ring.hovered{width:52px;height:52px;border-color:#7eb8d4;box-shadow:0 0 12px #7eb8d4aa;}
+      @keyframes orbit-spin{from{transform:translate(-50%,-50%) rotate(0deg)}to{transform:translate(-50%,-50%) rotate(360deg)}}
+      .orbit-ring{position:absolute;top:50%;left:50%;width:48px;height:48px;border-radius:50%;border:2px dashed rgba(126,184,212,0.8);pointer-events:none;animation:orbit-spin 1.2s linear infinite;z-index:10;}
+      .social-icons a{position:relative;overflow:visible;}
+      .section,.portfolio-card{opacity:0;transform:translateY(32px);transition:opacity .6s ease,transform .6s ease;}
+      .section.aos-animate,.portfolio-card.aos-animate{opacity:1;transform:translateY(0);}
+      @keyframes letter-shimmer{0%{color:inherit;text-shadow:none}50%{color:#ffd700;text-shadow:0 0 12px #ffd700,0 0 24px #fff8}100%{color:inherit;text-shadow:none}}
+      .section-title .shimmer-char{display:inline-block;animation:letter-shimmer .5s ease forwards;}
+      .nav-ripple{position:fixed;border-radius:50%;background:rgba(126,184,212,0.35);pointer-events:none;z-index:9997;transform:translate(-50%,-50%) scale(0);animation:nav-ripple-anim .55s ease-out forwards;}
+      @keyframes nav-ripple-anim{to{transform:translate(-50%,-50%) scale(1);opacity:0;}}
+      .btn-shockwave{position:fixed;border-radius:50%;border:2px solid rgba(126,184,212,0.8);pointer-events:none;z-index:9997;transform:translate(-50%,-50%) scale(0);animation:shockwave-anim .6s ease-out forwards;}
+      @keyframes shockwave-anim{to{transform:translate(-50%,-50%) scale(1);opacity:0;}}
+    `;
+    document.head.appendChild(s);
+
+    /* ── Snow canvas ── */
+    const snowCanvas = document.getElementById('snow-canvas');
+    const sctx = snowCanvas.getContext('2d');
+    function resizeSnow(){ snowCanvas.width = window.innerWidth; snowCanvas.height = window.innerHeight; }
+    resizeSnow();
+    window.addEventListener('resize', resizeSnow);
+    const flakes = [];
+    for(let i=0;i<120;i++) flakes.push({
+      x:Math.random()*window.innerWidth, y:Math.random()*window.innerHeight,
+      r:.8+Math.random()*2.5, speed:.4+Math.random()*1.2,
+      drift:(Math.random()-.5)*.4, alpha:.3+Math.random()*.6,
+      wobble:Math.random()*Math.PI*2, wobbleSpeed:.005+Math.random()*.015
+    });
+    function drawSnow(){
+      sctx.clearRect(0,0,snowCanvas.width,snowCanvas.height);
+      flakes.forEach(f=>{
+        f.wobble+=f.wobbleSpeed; f.x+=f.drift+Math.sin(f.wobble)*.3; f.y+=f.speed;
+        if(f.y>snowCanvas.height+5){f.y=-5;f.x=Math.random()*snowCanvas.width;}
+        if(f.x>snowCanvas.width) f.x=0; if(f.x<0) f.x=snowCanvas.width;
+        sctx.beginPath(); sctx.arc(f.x,f.y,f.r,0,Math.PI*2);
+        sctx.fillStyle=`rgba(255,255,255,${f.alpha})`; sctx.fill();
+      });
+    }
+
+    /* ── fx-canvas ── */
+    const fxCanvas = document.createElement('canvas');
+    fxCanvas.id = 'fx-canvas';
+    Object.assign(fxCanvas.style,{position:'fixed',inset:'0',zIndex:'9998',pointerEvents:'none',width:'100%',height:'100%'});
+    document.body.appendChild(fxCanvas);
+    const fx = fxCanvas.getContext('2d');
+    function resizeFx(){ fxCanvas.width=window.innerWidth; fxCanvas.height=window.innerHeight; }
+    resizeFx(); window.addEventListener('resize',resizeFx);
+
+    /* ── Cursor ── */
+    const dot = document.createElement('div'); dot.id='cursor-dot';
+    const ring = document.createElement('div'); ring.id='cursor-ring';
+    document.body.append(dot,ring);
+    let mx=-100,my=-100,rx=-100,ry=-100;
+    window.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;});
+    document.addEventListener('mouseover',e=>{if(e.target.closest('a,button,.btn,.service-card,.portfolio-card')) ring.classList.add('hovered');});
+    document.addEventListener('mouseout',e=>{if(e.target.closest('a,button,.btn,.service-card,.portfolio-card')) ring.classList.remove('hovered');});
+    document.addEventListener('mousedown',()=>{dot.style.transform='translate(-50%,-50%) scale(2.2)'; setTimeout(()=>dot.style.transform='translate(-50%,-50%)',200);});
+
+    /* ── Particles ── */
+    const particles=[], trails=[], sparkles=[], inputSparks=[];
+    function spawnBurst(x,y,count,colors){
+      for(let i=0;i<count;i++){
+        const a=Math.random()*Math.PI*2, sp=2+Math.random()*4;
+        particles.push({x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp-1,life:1,decay:.022+Math.random()*.02,r:2+Math.random()*3,color:colors[Math.floor(Math.random()*colors.length)],gravity:.18});
+      }
+    }
+    function spawnTrail(x,y){ trails.push({x,y,life:1,decay:.1,r:3}); }
+    function spawnSparkles(rect){
+      for(let i=0;i<6;i++){
+        sparkles.push({x:rect.left+Math.random()*rect.width,y:rect.top+4,vx:(Math.random()-.5)*2,vy:-(1+Math.random()*3),life:1,decay:.03+Math.random()*.02,r:2+Math.random()*2,color:Math.random()>.5?'#fff':'#7eb8d4'});
+      }
+    }
+    function spawnInputSpark(x,y){
+      for(let i=0;i<2;i++) inputSparks.push({x,y,vx:(Math.random()-.5)*1.5,vy:-(0.5+Math.random()*2),life:1,decay:.06+Math.random()*.04,r:1.5+Math.random()});
+    }
+
+    function tickArr(arr){
+      for(let i=arr.length-1;i>=0;i--){
+        const p=arr[i]; p.x+=p.vx||0; p.y+=p.vy||0;
+        if(p.vy!==undefined) p.vy+=(p.gravity||0);
+        p.life-=p.decay; if(p.life<=0) arr.splice(i,1);
+      }
+    }
+    function drawArr(arr,defaultColor){
+      arr.forEach(p=>{
+        fx.save(); fx.globalAlpha=Math.max(0,p.life);
+        fx.fillStyle=p.color||defaultColor; fx.shadowColor=p.color||defaultColor; fx.shadowBlur=8;
+        fx.beginPath(); fx.arc(p.x,p.y,p.r,0,Math.PI*2); fx.fill(); fx.restore();
+      });
+    }
+
+    /* ── 60fps main loop ── */
+    const FRAME_MS=1000/90; let lastTime=0;
+    function fxLoop(now){
+      requestAnimationFrame(fxLoop);
+      if(now-lastTime<FRAME_MS) return;
+      lastTime=now-(now-lastTime)%FRAME_MS;
+      rx+=(mx-rx)*.15; ry+=(my-ry)*.15;
+      dot.style.left=mx+'px'; dot.style.top=my+'px';
+      ring.style.left=rx+'px'; ring.style.top=ry+'px';
+      fx.clearRect(0,0,fxCanvas.width,fxCanvas.height);
+      tickArr(particles); drawArr(particles,'#7eb8d4');
+      tickArr(trails);    drawArr(trails,'#7eb8d4');
+      tickArr(sparkles);  drawArr(sparkles,'#fff');
+      tickArr(inputSparks); drawArr(inputSparks,'#a8d8f0');
+      drawSnow();
+    }
+    requestAnimationFrame(fxLoop);
+
+    /* ── Click burst ── */
+    document.addEventListener('click',e=>{
+      spawnBurst(e.clientX,e.clientY,12,['#7eb8d4','#a8c8d8','#fff','#4a90c4','#d4e8f0']);
+    });
+
+    /* ── Nav ripple ── */
+    document.querySelectorAll('.nav-links a').forEach(link=>{
+      link.addEventListener('click',e=>{
+        const r=document.createElement('div'); r.className='nav-ripple';
+        Object.assign(r.style,{left:e.clientX+'px',top:e.clientY+'px',width:'120px',height:'120px'});
+        document.body.appendChild(r); setTimeout(()=>r.remove(),600);
+      });
+    });
+
+    /* ── Button magnetic + shockwave ── */
+    document.querySelectorAll('.btn').forEach(btn=>{
+      btn.addEventListener('mousemove',e=>{
+        const rc=btn.getBoundingClientRect();
+        const dx=(e.clientX-rc.left-rc.width/2)/(rc.width/2);
+        const dy=(e.clientY-rc.top-rc.height/2)/(rc.height/2);
+        btn.style.transform=`translate(${dx*8}px,${dy*8}px)`;
+      });
+      btn.addEventListener('mouseleave',()=>btn.style.transform='');
+      btn.addEventListener('click',e=>{
+        const sw=document.createElement('div'); sw.className='btn-shockwave';
+        Object.assign(sw.style,{left:e.clientX+'px',top:e.clientY+'px',width:'100px',height:'100px'});
+        document.body.appendChild(sw); setTimeout(()=>sw.remove(),650);
+      });
+    });
+
+    /* ── Portfolio card bubble pop + trail ── */
+    document.querySelectorAll('.portfolio-card').forEach(card=>{
+      card.addEventListener('mouseenter',()=>{
+        card.style.transition='transform .3s cubic-bezier(.34,1.56,.64,1),box-shadow .3s ease';
+        card.style.transform='translateY(-12px) scale(1.04)';
+      });
+      card.addEventListener('mouseleave',()=>{
+        card.style.transition='transform .4s cubic-bezier(.23,1,.32,1),box-shadow .4s ease';
+        card.style.transform='translateY(0) scale(1)';
+      });
+      card.addEventListener('mousemove',e=>spawnTrail(e.clientX,e.clientY));
+    });
+
+    /* ── Scroll reveal ── */
+    const revealObs=new IntersectionObserver(entries=>{
+      entries.forEach(en=>{
+        if(en.isIntersecting&&!en.target.classList.contains('aos-animate')){
+          en.target.classList.add('aos-animate');
+          spawnSparkles(en.target.getBoundingClientRect());
+          revealObs.unobserve(en.target);
+        }
+      });
+    },{threshold:.1});
+    document.querySelectorAll('.section,.portfolio-card').forEach(el=>revealObs.observe(el));
+
+    /* ── Form typing sparks ── */
+    document.querySelectorAll('.contact-form input,.contact-form textarea').forEach(input=>{
+      input.addEventListener('keydown',()=>{
+        const rc=input.getBoundingClientRect();
+        spawnInputSpark(rc.left+rc.width*.92,rc.top+rc.height*.4);
+      });
+    });
+
+    /* ── Social orbit ring ── */
+    document.querySelectorAll('.social-icons a').forEach(icon=>{
+      let orb=null;
+      icon.addEventListener('mouseenter',()=>{if(!orb){orb=document.createElement('div');orb.className='orbit-ring';icon.appendChild(orb);}});
+      icon.addEventListener('mouseleave',()=>{if(orb){orb.remove();orb=null;}});
+    });
+
+    /* ── Service card 3D tilt ── */
+    document.querySelectorAll('.service-card').forEach(card=>{
+      card.addEventListener('mousemove',e=>{
+        const rc=card.getBoundingClientRect();
+        const dx=(e.clientX-rc.left-rc.width/2)/(rc.width/2);
+        const dy=(e.clientY-rc.top-rc.height/2)/(rc.height/2);
+        card.style.transform=`perspective(800px) rotateX(${-dy*8}deg) rotateY(${dx*8}deg) scale(1.03)`;
+      });
+      card.addEventListener('mouseleave',()=>{
+        card.style.transition='transform .45s cubic-bezier(.23,1,.32,1)';
+        card.style.transform='perspective(800px) rotateX(0) rotateY(0) scale(1)';
+        setTimeout(()=>card.style.transition='',460);
+      });
+    });
+
+  })();
+  </script>
+
+</body>
+</html>

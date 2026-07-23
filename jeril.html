@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Smart Waste Bin</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0c0d18;overflow:hidden;font-family:'Segoe UI',system-ui,sans-serif;color:#fff}
+canvas{display:block}
+
+#topbar{position:fixed;top:0;left:0;right:0;height:46px;background:#0c0d18;
+  border-bottom:1px solid #1a2332;display:flex;align-items:center;
+  justify-content:space-between;padding:0 14px;z-index:30;gap:8px}
+.brand{font-size:12px;font-weight:900;letter-spacing:2.5px;color:#00e5ff;
+  text-transform:uppercase;display:flex;align-items:center;gap:6px}
+.bdot{width:6px;height:6px;border-radius:50%;background:#00e5ff;
+  box-shadow:0 0 7px #00e5ff;animation:bp 2s ease-in-out infinite}
+@keyframes bp{0%,100%{opacity:1}50%{opacity:.15}}
+#vctrls{display:flex;gap:4px}
+.vbtn{padding:3px 10px;border:1px solid #1a2332;background:#101220;color:#445;
+  border-radius:10px;cursor:pointer;font-size:10px;font-weight:700;
+  letter-spacing:.3px;transition:all .14s;white-space:nowrap}
+.vbtn:hover,.vbtn.on{background:#091c2c;border-color:#00e5ff;color:#00e5ff}
+
+#panel-l{position:fixed;left:10px;top:56px;width:158px;z-index:20;
+  background:#101220;border:1px solid #1a2332;border-radius:10px;padding:10px}
+.ph{font-size:8px;letter-spacing:2px;color:#2a3444;text-transform:uppercase;
+  margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid #1a2332}
+.tbtn{width:100%;padding:6px 8px;margin-bottom:4px;border:none;border-radius:6px;
+  cursor:pointer;display:flex;align-items:center;gap:6px;transition:all .12s;
+  text-align:left;font-family:inherit}
+.tbtn:hover{filter:brightness(1.2);transform:translateX(2px)}
+.tbtn:disabled{opacity:.22;cursor:not-allowed;transform:none!important;filter:none!important}
+.tbtn.bio{background:#0b2e18;border:1px solid #165228;color:#80ffb0}
+.tbtn.rec{background:#0b1a32;border:1px solid #163258;color:#80b8ff}
+.tbtn.res{background:#241408;border:1px solid #5a2c0c;color:#ffb080}
+.tbtn .ico{font-size:14px;flex-shrink:0}
+.tbtn .inf{display:flex;flex-direction:column;line-height:1.25}
+.tbtn .tn{font-size:10px;font-weight:800;color:#ddd}
+.tbtn .ts{font-size:8px;opacity:.55}
+.abtn{width:100%;padding:5px;border-radius:6px;cursor:pointer;font-size:9px;
+  font-weight:800;margin-top:3px;transition:all .14s;font-family:inherit;letter-spacing:.3px}
+.abtn.red{border:1px solid #3a1414;background:#140a0a;color:#cc4444}
+.abtn.red:hover{background:#220e0e;border-color:#cc4444}
+.abtn.blue{border:1px solid #143268;background:#0a1020;color:#4488cc}
+.abtn.blue:hover{background:#0e1830;border-color:#4488cc}
+
+#panel-r{position:fixed;right:10px;top:56px;width:178px;z-index:20;
+  background:#101220;border:1px solid #1a2332;border-radius:10px;padding:10px}
+.bind{display:flex;align-items:center;gap:7px;padding:5px 7px;border-radius:6px;
+  margin-bottom:4px;border:1px solid #1a2332;background:#0c0d18;transition:all .35s}
+.bind .dot{width:7px;height:7px;border-radius:50%;background:#2e0e0e;flex-shrink:0;transition:all .35s}
+.bind.active{background:#081a10;border-color:#1cbb5c}
+.bind.active .dot{background:#1cbb5c;box-shadow:0 0 7px rgba(28,187,92,.7)}
+.bind .bn{font-size:10px;font-weight:700;color:#aaa}
+.bind .bt{font-size:8px;color:#2a3444;margin-top:1px}
+#sbox{margin-top:8px;padding:7px;background:#0c0d18;border:1px solid #1a2332;border-radius:7px}
+#sstep{font-size:18px;text-align:center;margin-bottom:3px}
+#stext{font-size:9px;color:#556;line-height:1.5}
+#notif{display:none;flex-direction:column;margin-top:8px}
+#notif-inner{background:#081510;border:1px solid #1cbb5c;border-radius:8px;
+  padding:10px 12px;text-align:center}
+#notif-icon{font-size:22px;margin-bottom:4px}
+#notif-title{font-size:12px;font-weight:900;color:#fff;margin-bottom:2px}
+#notif-sub{font-size:9px;color:#6a8a7a;margin-bottom:9px;line-height:1.4}
+#notif-action{width:100%;padding:7px 0;border:none;border-radius:16px;cursor:pointer;
+  font-size:11px;font-weight:800;font-family:inherit;background:#1cbb5c;color:#000;transition:all .18s}
+#notif-action:hover{background:#22dd66;transform:scale(1.02)}
+
+#bbar{position:fixed;bottom:12px;left:50%;transform:translateX(-50%);
+  display:flex;gap:7px;z-index:20}
+.bpill{padding:4px 13px;border-radius:18px;font-size:9px;font-weight:900;
+  letter-spacing:.9px;border:1.5px solid;transition:all .4s;white-space:nowrap}
+.bpill.off{border-color:#241414;background:#100c0c;color:#332}
+.bpill.on{border-color:#1cbb5c;background:#08180e;color:#1cbb5c;
+  box-shadow:0 0 12px rgba(28,187,92,.35)}
+
+.elbl{position:fixed;pointer-events:none;z-index:25;background:#090a14;
+  border:1px solid #1e3450;border-radius:5px;padding:2px 7px;
+  white-space:nowrap;opacity:0;transition:opacity .3s;display:flex;align-items:flex-start;gap:4px}
+.elbl .ei{font-size:10px;margin-top:1px}
+.elbl .en{color:#b0d0f0;font-size:9px;font-weight:800;display:block}
+.elbl .ed{color:#1e3040;font-size:8px;display:block;margin-top:1px}
+#tip{position:fixed;bottom:38px;left:50%;transform:translateX(-50%);
+  font-size:9px;color:#1a2030;z-index:10}
+</style>
+</head>
+<body>
+
+<div id="topbar">
+  <div class="brand"><div class="bdot"></div>Smart Waste Bin</div>
+  <div id="vctrls">
+    <button class="vbtn on" id="vbtn-normal">Normal</button>
+    <button class="vbtn"    id="vbtn-explode">Exploded</button>
+    <button class="vbtn"    id="vbtn-xray">X-Ray</button>
+    <button class="vbtn"    id="vbtn-top">Top</button>
+    <button class="vbtn"    id="vbtn-side">Side</button>
+  </div>
+</div>
+
+<div id="panel-l">
+  <div class="ph">Throw Trash In</div>
+  <button class="tbtn bio" id="btn-banana"><span class="ico">🍌</span><span class="inf"><span class="tn">Banana Peel</span><span class="ts">Biodegradable</span></span></button>
+  <button class="tbtn bio" id="btn-leaf">  <span class="ico">🍃</span><span class="inf"><span class="tn">Dry Leaf</span>   <span class="ts">Biodegradable</span></span></button>
+  <button class="tbtn rec" id="btn-plastic"><span class="ico">🧴</span><span class="inf"><span class="tn">Plastic Bottle</span><span class="ts">Recyclable</span></span></button>
+  <button class="tbtn rec" id="btn-paper"> <span class="ico">📄</span><span class="inf"><span class="tn">Paper</span>         <span class="ts">Recyclable</span></span></button>
+  <button class="tbtn res" id="btn-metal"> <span class="ico">🥫</span><span class="inf"><span class="tn">Metal Can</span>    <span class="ts">Non-Biodegradable</span></span></button>
+  <button class="tbtn res" id="btn-glass"> <span class="ico">🍶</span><span class="inf"><span class="tn">Glass</span>         <span class="ts">Non-Biodegradable</span></span></button>
+  <button class="abtn red"  id="reset-btn">↺ Reset</button>
+  <button class="abtn blue" id="detach-btn">⬆ Pull Out Bins</button>
+</div>
+
+<div id="panel-r">
+  <div class="ph">Compartment Status</div>
+  <div class="bind" id="ind-bio"><div class="dot"></div><div><div class="bn">🌿 Biodegradable</div>    <div class="bt">Compartment 1</div></div></div>
+  <div class="bind" id="ind-rec"><div class="dot"></div><div><div class="bn">♻️ Recyclable</div>       <div class="bt">Compartment 2</div></div></div>
+  <div class="bind" id="ind-res"><div class="dot"></div><div><div class="bn">🔩 Non-Biodegradable</div><div class="bt">Compartment 3</div></div></div>
+  <div id="sbox"><div id="sstep">🟢</div><div id="stext">Throw trash into the hole on top</div></div>
+  <div id="notif">
+    <div id="notif-inner">
+      <div id="notif-icon">✅</div>
+      <div id="notif-title">Detected</div>
+      <div id="notif-sub">Compartment open</div>
+      <button id="notif-action">✓ Done — I placed it in</button>
+    </div>
+  </div>
+</div>
+
+<div class="elbl" id="el-0"><span class="ei">🔲</span><span><span class="en">Base Plate</span>     <span class="ed">ABS · floor mount</span></span></div>
+<div class="elbl" id="el-1"><span class="ei">🔲</span><span><span class="en">Top Lid + Hole</span> <span class="ed">Input opening</span></span></div>
+<div class="elbl" id="el-2"><span class="ei">🔲</span><span><span class="en">Side Walls</span>     <span class="ed">Polycarbonate</span></span></div>
+<div class="elbl" id="el-3"><span class="ei">🔲</span><span><span class="en">Divider A</span>      <span class="ed">Bay separator</span></span></div>
+<div class="elbl" id="el-4"><span class="ei">🔲</span><span><span class="en">Divider B</span>      <span class="ed">Bay separator</span></span></div>
+<div class="elbl" id="el-5"><span class="ei">🖥</span><span> <span class="en">Machine Detector</span><span class="ed">IR + image scan</span></span></div>
+<div class="elbl" id="el-6"><span class="ei">🔧</span><span> <span class="en">Servo Motors ×3</span><span class="ed">Door actuators</span></span></div>
+<div class="elbl" id="el-7"><span class="ei">🟢</span><span> <span class="en">Microcontroller</span><span class="ed">Arduino Mega</span></span></div>
+
+<div id="bbar">
+  <div class="bpill off" id="pill-bio">🌿 BIO</div>
+  <div class="bpill off" id="pill-rec">♻️ REC</div>
+  <div class="bpill off" id="pill-res">🔩 NON-BIO</div>
+</div>
+<div id="tip">🖱 Drag · Scroll · Right-drag pan</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+// ── SCENE ───────────────────────────────────────────
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0c0d18);
+scene.fog = new THREE.FogExp2(0x0c0d18, 0.014);
+
+const camera = new THREE.PerspectiveCamera(44, innerWidth/innerHeight, 0.1, 200);
+camera.position.set(0, 7, 15);
+
+const renderer = new THREE.WebGLRenderer({antialias:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.setSize(innerWidth,innerHeight);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+document.body.appendChild(renderer.domElement);
+
+const orb = new THREE.OrbitControls(camera, renderer.domElement);
+orb.enableDamping = true; orb.dampingFactor = 0.08;
+orb.minDistance = 4; orb.maxDistance = 40;
+orb.target.set(0, 2.8, 0);
+
+window.addEventListener('resize', () => {
+  camera.aspect = innerWidth/innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
+
+// Lights
+scene.add(new THREE.AmbientLight(0xffffff, 0.65));
+const sun = new THREE.DirectionalLight(0xffffff, 0.95);
+sun.position.set(6,14,9); sun.castShadow = true;
+sun.shadow.mapSize.set(1024,1024);
+sun.shadow.camera.left = sun.shadow.camera.bottom = -10;
+sun.shadow.camera.right = sun.shadow.camera.top = 10;
+scene.add(sun);
+const intL = new THREE.PointLight(0xffffff, 0.9, 10);
+intL.position.set(0,2,0); scene.add(intL);
+
+// Floor
+const flr = new THREE.Mesh(new THREE.PlaneGeometry(60,60),
+  new THREE.MeshLambertMaterial({color:0x0a0b16}));
+flr.rotation.x = -Math.PI/2; flr.receiveShadow = true; scene.add(flr);
+const grid = new THREE.GridHelper(60,60,0x121224,0x121224);
+grid.material.opacity = 0.35; grid.material.transparent = true; scene.add(grid);
+
+// ── Helpers ──
+function B(w,h,d,col,x,y,z,rgh=0.65,mtl=0.2){
+  const m = new THREE.Mesh(new THREE.BoxGeometry(w,h,d),
+    new THREE.MeshStandardMaterial({color:col,roughness:rgh,metalness:mtl}));
+  m.position.set(x,y,z); m.castShadow=true; m.receiveShadow=true;
+  scene.add(m); return m;
+}
+function lbl(txt,fg,fw=320,fh=80,fs=28){
+  const c=document.createElement('canvas'); c.width=fw; c.height=fh;
+  const ctx=c.getContext('2d');
+  ctx.clearRect(0,0,fw,fh);
+  ctx.font=`800 ${fs}px Arial`; ctx.fillStyle=fg;
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText(txt,fw/2,fh/2);
+  return new THREE.CanvasTexture(c);
+}
+</script>
+
+<script>
+// ── BIN DIMENSIONS (smaller & cleaner) ──────────────
+const BW=3.6, BH=5.2, BD=2.4, W=0.10;
+const BAY_W = (BW - W*4)/3;
+const BAY_X = [-(BAY_W+W), 0, (BAY_W+W)];
+const HOLE_W = BW*0.58, HOLE_D = BD*0.60;
+
+// Shell materials
+const SC  = new THREE.MeshStandardMaterial({color:0x1c2b38,roughness:0.65,metalness:0.3});
+const SCT = new THREE.MeshStandardMaterial({color:0x1c2b38,roughness:0.65,metalness:0.3,opacity:0.10,transparent:true,side:THREE.DoubleSide});
+
+const parts=[];
+function P(w,h,d,x,y,z,m=SC){
+  const mesh=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);
+  mesh.position.set(x,y,z); mesh.castShadow=true; mesh.receiveShadow=true;
+  scene.add(mesh); parts.push({mesh,home:new THREE.Vector3(x,y,z)}); return mesh;
+}
+
+// Shell panels
+P(BW,W,BD,  0,W/2,0);                              // 0 base
+// Top lid — 4 strips around hole
+const lS=(BW-HOLE_W)/2, fS=(BD-HOLE_D)/2;
+P(lS,W,BD,  -(HOLE_W/2+lS/2), BH-W/2, 0);         // 1 lid-left
+P(lS,W,BD,   (HOLE_W/2+lS/2), BH-W/2, 0);         // 2 lid-right
+P(HOLE_W,W,fS, 0, BH-W/2,  BD/2-fS/2);            // 3 lid-front
+P(HOLE_W,W,fS, 0, BH-W/2, -BD/2+fS/2);            // 4 lid-back
+P(W,BH,BD,  -BW/2+W/2, BH/2, 0);                  // 5 left wall
+P(W,BH,BD,   BW/2-W/2, BH/2, 0);                  // 6 right wall
+P(BW,BH,W,  0, BH/2, -BD/2+W/2);                  // 7 back wall
+P(W,BH,BD,  BAY_X[0]+BAY_W/2+W/2, BH/2, 0);       // 8 div A
+P(W,BH,BD,  BAY_X[2]-BAY_W/2-W/2, BH/2, 0);       // 9 div B
+
+// Hole rim
+const rimM=new THREE.MeshStandardMaterial({color:0x2a3e54,roughness:0.35,metalness:0.6});
+const RH=0.18, RT=W*1.6;
+[BD/2-HOLE_D/2-RT/2, -(BD/2-HOLE_D/2-RT/2)].forEach(rz=>{
+  const r=new THREE.Mesh(new THREE.BoxGeometry(HOLE_W+RT*2,RH,RT),rimM);
+  r.position.set(0,BH+RH/2,rz); scene.add(r);
+});
+[-HOLE_W/2-RT/2, HOLE_W/2+RT/2].forEach(rx=>{
+  const r=new THREE.Mesh(new THREE.BoxGeometry(RT,RH,HOLE_D+RT*2),rimM);
+  r.position.set(rx,BH+RH/2,0); scene.add(r);
+});
+
+// Dark tunnel inside hole
+const tun=new THREE.Mesh(new THREE.BoxGeometry(HOLE_W-W*.4,BH*.24,HOLE_D-W*.4),
+  new THREE.MeshStandardMaterial({color:0x010204,roughness:1,side:THREE.BackSide}));
+tun.position.set(0,BH-BH*.12,0); scene.add(tun);
+
+// Compartment interior colours
+const CC=[0x0a2214,0x0a1422,0x221408];
+BAY_X.forEach((bx,i)=>{
+  const m=new THREE.Mesh(new THREE.BoxGeometry(BAY_W-W*.3,BH-W*2,BD-W*2),
+    new THREE.MeshStandardMaterial({color:CC[i],roughness:0.9}));
+  m.position.set(bx,(BH-W*2)/2+W,0); scene.add(m);
+});
+
+// Corner trims
+const TM=new THREE.MeshStandardMaterial({color:0x223040,roughness:0.5,metalness:0.5});
+[[BW/2-W*.3,BD/2-W*.3],[BW/2-W*.3,-(BD/2-W*.3)],
+ [-(BW/2-W*.3),BD/2-W*.3],[-(BW/2-W*.3),-(BD/2-W*.3)]].forEach(([tx,tz])=>{
+  const t=new THREE.Mesh(new THREE.BoxGeometry(W*.45,BH,W*.45),TM);
+  t.position.set(tx,BH/2,tz); scene.add(t);
+});
+
+// Feet
+[[-BW/2+.2,-BD/2+.2],[BW/2-.2,-BD/2+.2],
+ [-BW/2+.2, BD/2-.2],[BW/2-.2, BD/2-.2]].forEach(([fx,fz])=>{
+  B(.20,.16,.20,0x0a1018,fx,-.08,fz,.7,.4);
+});
+
+// Front colour stripes
+[[0x166030],[0x163668],[0x682c10]].forEach(([c],i)=>{
+  B(BAY_W-W*.4,W*1.6,W*.28,c,BAY_X[i],BH*.52,BD/2,.45,.3);
+});
+
+// ── DETAIL: horizontal divider rail between panels and doors ──
+B(BW-W*.2, W*1.0, W*.32, 0x1e3050, 0, BH*.44, BD/2, .4, .6);
+
+// ── DETAIL: ventilation slots on back wall ──
+for(let s=0;s<6;s++){
+  B(BW*.5, W*.35, W*.15, 0x080e18, 0, 0.55+s*0.42, -BD/2+W*.06, .95, 0);
+}
+
+// ── DETAIL: bolt/rivet heads on side panels ──
+const boltM=new THREE.MeshStandardMaterial({color:0x2e4060,roughness:0.3,metalness:0.85});
+[BH*.22,BH*.5,BH*.78].forEach(by=>{
+  [BD/2-W*.6, W*.4-BD/2].forEach(bz=>{
+    const bo=new THREE.Mesh(new THREE.CylinderGeometry(W*.32,W*.32,W*.22,8),boltM);
+    bo.rotation.z=Math.PI/2; bo.position.set(-BW/2+W*.06,by,bz); scene.add(bo);
+    const bo2=bo.clone(); bo2.position.set(BW/2-W*.06,by,bz); scene.add(bo2);
+  });
+});
+
+// ── DETAIL: LED status strip across front top ──
+const ledStripMat=new THREE.MeshStandardMaterial({
+  color:0x00e5ff, emissive:new THREE.Color(0x002233), roughness:0.1, metalness:0.9});
+const ledStrip=new THREE.Mesh(new THREE.BoxGeometry(BW-W*.4,W*.5,W*.18),ledStripMat);
+ledStrip.position.set(0,BH-W*.55,BD/2); scene.add(ledStrip);
+
+// ── DETAIL: cable conduit on back wall ──
+B(W*.65,BH*.55,W*.45,0x0e1826,BW*.32,BH*.38,-BD/2+W*.32,.6,.45);
+
+// ── DETAIL: rubber feet (cylinder) ──
+const ftM=new THREE.MeshStandardMaterial({color:0x080c14,roughness:0.95,metalness:0.05});
+[[-BW/2+.18,-BD/2+.18],[BW/2-.18,-BD/2+.18],
+ [-BW/2+.18, BD/2-.18],[BW/2-.18, BD/2-.18]].forEach(([fx,fz])=>{
+  const ft=new THREE.Mesh(new THREE.CylinderGeometry(.08,.10,.14,12),ftM);
+  ft.position.set(fx,-.07,fz); scene.add(ft);
+});
+</script>
+
+<script>
+// ── MACHINE DETECTOR (inside, below hole) ───────────
+const DET_Y = BH - W - 0.28;
+const scMat = new THREE.MeshStandardMaterial({
+  color:0x00e5ff, emissive:new THREE.Color(0x001828), roughness:.1, metalness:.9});
+// Detector slab
+const detSlab=new THREE.Mesh(new THREE.BoxGeometry(HOLE_W-W*.4,.22,HOLE_D-W*.4),
+  new THREE.MeshStandardMaterial({color:0x050d1a,roughness:.35,metalness:.65}));
+detSlab.position.set(0,DET_Y,0); scene.add(detSlab);
+parts.push({mesh:detSlab,home:new THREE.Vector3(0,DET_Y,0)});
+// Screen strip on front
+const scMesh=new THREE.Mesh(new THREE.PlaneGeometry(HOLE_W-W,.18),scMat);
+scMesh.position.set(0,DET_Y,BD/2+.007); scene.add(scMesh);
+// IR LEDs facing up
+const irM=new THREE.MeshStandardMaterial({color:0x00cc80,emissive:new THREE.Color(0x007744),roughness:.2});
+for(let i=0;i<4;i++){
+  const led=new THREE.Mesh(new THREE.CylinderGeometry(.035,.035,.05,8),irM);
+  led.position.set(-HOLE_W*.28+i*HOLE_W*.19,DET_Y+.14,0); scene.add(led);
+}
+// Machine Detector label
+const mdM=new THREE.Mesh(new THREE.PlaneGeometry(HOLE_W-W,.16),
+  new THREE.MeshBasicMaterial({
+    map:lbl('◈ MACHINE DETECTOR ◈','#00d4ff',512,64,18),transparent:true,depthWrite:false}));
+mdM.position.set(0,DET_Y,BD/2+.009); scene.add(mdM);
+
+// Scan light
+const scanLight=new THREE.SpotLight(0x00e5ff,0,6,Math.PI/5,.45);
+scanLight.position.set(0,BH+.3,0); scanLight.target.position.set(0,0,0);
+scene.add(scanLight); scene.add(scanLight.target);
+
+// ── NEON LABELS (HTML overlays) ──────────────────────
+const LABEL_Y = BH*.70;
+const neonCfg=[
+  {name:'BIODEGRADABLE',    glow:'#1cbb5c'},
+  {name:'RECYCLABLE',       glow:'#38b8e8'},
+  {name:'NON-BIODEGRADABLE',glow:'#e8a038'},
+];
+const neonPos3D = BAY_X.map(bx=>new THREE.Vector3(bx,LABEL_Y,BD/2+.12));
+const neonDivs = neonCfg.map((cfg,i)=>{
+  const d=document.createElement('div');
+  d.style.cssText=[
+    'position:fixed','pointer-events:none','z-index:15',
+    'transform:translateX(-50%)',
+    'padding:4px 7px','border-radius:5px',
+    'border:1px solid '+cfg.glow+'44',
+    'background:#010205',
+    'font:800 9px "Arial Black",Arial,sans-serif',
+    'letter-spacing:1.2px','text-align:center','white-space:nowrap',
+    'color:'+cfg.glow+'65',
+    'text-shadow:0 0 5px '+cfg.glow+'44',
+    'transition:color .3s,text-shadow .3s,border-color .3s',
+  ].join(';');
+  d.textContent=cfg.name;
+  d.dataset.glow=cfg.glow;
+  document.body.appendChild(d);
+  return d;
+});
+function updateNeonOverlays(){
+  neonPos3D.forEach((wp,i)=>{
+    const v=wp.clone().project(camera);
+    if(v.z>=1){neonDivs[i].style.display='none';return;}
+    neonDivs[i].style.display='block';
+    neonDivs[i].style.left=((v.x*.5+.5)*innerWidth)+'px';
+    neonDivs[i].style.top=((-v.y*.5+.5)*innerHeight)+'px';
+    const sc=Math.max(.6,Math.min(1.3,5.5/Math.abs(camera.position.z||1)));
+    neonDivs[i].style.fontSize=Math.round(8*sc)+'px';
+  });
+}
+
+// ── STATUS WINDOWS frames (3D, no texture needed) ──
+BAY_X.forEach((bx,i)=>{
+  const fc=[0x166030,0x163668,0x682c10][i];
+  B(BAY_W-W*.5,.62,W*.06,0x0e1820,bx,LABEL_Y,BD/2+.005,.5,.8);  // frame
+  const face=new THREE.Mesh(new THREE.PlaneGeometry(BAY_W-W*.7,.54),
+    new THREE.MeshBasicMaterial({color:0x010205}));
+  face.position.set(bx,LABEL_Y,BD/2+.04); scene.add(face);
+  // corner dots
+  const hw=(BAY_W-W*.7)/2-.04, hh=.20;
+  [[bx-hw,LABEL_Y+hh],[bx+hw,LABEL_Y+hh],[bx-hw,LABEL_Y-hh],[bx+hw,LABEL_Y-hh]].forEach(([dx,dy])=>{
+    const dm=new THREE.MeshStandardMaterial({color:fc,emissive:new THREE.Color(fc),emissiveIntensity:.4,roughness:.15});
+    dm._on=fc; dm._off=fc;
+    const dot=new THREE.Mesh(new THREE.SphereGeometry(.032,8,8),dm);
+    dot.position.set(dx,dy,BD/2+.07); scene.add(dot);
+  });
+});
+
+// ── COMPARTMENT DOORS ────────────────────────────────
+const DOOR_H=BH*.46, DOOR_W=BAY_W-W, DOOR_OPEN=-Math.PI/2;
+const doorC=[0x186838,0x184880,0x783c14];
+const dPivots=[], dMeshes=[];
+const curDA=[0,0,0], tgtDA=[0,0,0];
+BAY_X.forEach((bx,i)=>{
+  const piv=new THREE.Object3D(); piv.position.set(bx,W,BD/2);
+  scene.add(piv); dPivots.push(piv);
+  const dm=new THREE.Mesh(new THREE.BoxGeometry(DOOR_W,DOOR_H,W),
+    new THREE.MeshStandardMaterial({color:doorC[i],roughness:.38,metalness:.3}));
+  dm.position.set(0,DOOR_H/2,0); dm.castShadow=true; piv.add(dm); dMeshes.push(dm);
+  const lp=new THREE.Mesh(new THREE.PlaneGeometry(DOOR_W*.72,.28),
+    new THREE.MeshBasicMaterial({
+      map:lbl(['BIO','REC','NON-BIO'][i],['#88ffc0','#88c0ff','#ffc088'][i],320,70,26),
+      transparent:true,depthWrite:false}));
+  lp.position.set(0,DOOR_H*.68,W/2+.004); dm.add(lp);
+  const hm=new THREE.Mesh(new THREE.BoxGeometry(DOOR_W*.3,.05,.08),
+    new THREE.MeshStandardMaterial({color:0xbbbbbb,roughness:.2,metalness:.9}));
+  hm.position.set(0,DOOR_H*.32,W/2+.05); dm.add(hm);
+  for(let s=0;s<3;s++){
+    const sl=new THREE.Mesh(new THREE.BoxGeometry(DOOR_W*.5,.03,.04),
+      new THREE.MeshStandardMaterial({color:0x060c14}));
+    sl.position.set(0,.32+s*.22,W/2+.003); dm.add(sl);
+  }
+});
+
+// ── INTERNALS ────────────────────────────────────────
+const intParts=[];
+function IP(w,h,d,col,x,y,z){
+  const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),
+    new THREE.MeshStandardMaterial({color:col,roughness:.5,metalness:.4}));
+  m.position.set(x,y,z); scene.add(m);
+  intParts.push({mesh:m,home:new THREE.Vector3(x,y,z)}); return m;
+}
+const rfPiv=new THREE.Object3D(); rfPiv.position.set(0,BH-.5,0); scene.add(rfPiv);
+const rfMesh=new THREE.Mesh(new THREE.BoxGeometry(BW-W*3,.05,BD-W*3),
+  new THREE.MeshStandardMaterial({color:0x243850,roughness:.45}));
+rfPiv.add(rfMesh);
+intParts.push({mesh:rfMesh,home:new THREE.Vector3(0,BH-.5,0)});
+let rfAngle=0,rfTarget=0;
+IP(BAY_W*.76,.05,BD*.32,0x123012,BAY_X[0],.44,0);
+BAY_X.forEach(bx=>IP(.26,.26,.26,0x282838,bx,W*2,-BD/2+.35));
+IP(BAY_W*.70,.38,BD*.30,0x202020,BAY_X[2],.28,0);
+
+// ── DETACHABLE COLLECTION BOXES ─────────────────────
+// Each bay has a small removable COLLECTION BOX at its base.
+// It's a proper little container — open top, 4 walls, bottom,
+// with a colour-coded band, label, and pull handle on the back.
+// Slides out the BACK on guide rails.
+// User removes it, empties it, slides it back in.
+
+const BOX_W  = BAY_W - W*1.0;    // fits inside bay with small gap
+const BOX_H  = BH * 0.24;         // SHORT — just a collection tray height
+const BOX_D  = BD - W*2.0;        // full bay depth minus walls
+const BOX_Y  = BOX_H/2 + W*1.0;  // sits on base plate
+const BOX_SLIDE = BD + 0.5;       // slides completely clear of the back wall
+
+const boxBodyC  = [0x0a2a16, 0x0a162a, 0x2a1606];   // dark body per bay
+const boxAccC   = [0x1a7040, 0x1a4880, 0x783c14];    // accent / rim colour
+const boxThk    = W * 0.8;                            // wall thickness of box
+
+const colBoxes = [];
+let boxesOut = false;
+
+BAY_X.forEach((bx, i) => {
+  const g = new THREE.Group();
+  g.position.set(bx, BOX_Y, 0);
+  scene.add(g);
+
+  const matBody   = new THREE.MeshStandardMaterial({color:boxBodyC[i],  roughness:0.72, metalness:0.08});
+  const matAccent = new THREE.MeshStandardMaterial({color:boxAccC[i],   roughness:0.38, metalness:0.55});
+  const matChrome = new THREE.MeshStandardMaterial({color:0xcccccc, roughness:0.16, metalness:0.94});
+
+  // ── 4 walls (no top — open box) ──
+  // Front wall (faces compartment door)
+  const wFront=new THREE.Mesh(new THREE.BoxGeometry(BOX_W,BOX_H,boxThk),matBody);
+  wFront.position.set(0,0,BOX_D/2-boxThk/2); g.add(wFront);
+  // Back wall
+  const wBack=new THREE.Mesh(new THREE.BoxGeometry(BOX_W,BOX_H,boxThk),matBody);
+  wBack.position.set(0,0,-BOX_D/2+boxThk/2); g.add(wBack);
+  // Left wall
+  const wLeft=new THREE.Mesh(new THREE.BoxGeometry(boxThk,BOX_H,BOX_D),matBody);
+  wLeft.position.set(-BOX_W/2+boxThk/2,0,0); g.add(wLeft);
+  // Right wall
+  const wRight=new THREE.Mesh(new THREE.BoxGeometry(boxThk,BOX_H,BOX_D),matBody);
+  wRight.position.set(BOX_W/2-boxThk/2,0,0); g.add(wRight);
+  // Bottom
+  const wBot=new THREE.Mesh(new THREE.BoxGeometry(BOX_W,boxThk,BOX_D),matBody);
+  wBot.position.set(0,-BOX_H/2+boxThk/2,0); g.add(wBot);
+
+  // ── Top rim / lip — colour-coded accent band ──
+  const rim=new THREE.Mesh(new THREE.BoxGeometry(BOX_W+W*.3,W*1.2,BOX_D+W*.3),matAccent);
+  rim.position.set(0,BOX_H/2+W*.6,0); g.add(rim);
+
+  // ── Colour stripe on front face ──
+  const stripe=new THREE.Mesh(new THREE.BoxGeometry(BOX_W-boxThk*2,BOX_H*0.28,boxThk*.6),matAccent);
+  stripe.position.set(0,BOX_H*0.12,BOX_D/2-boxThk*.2); g.add(stripe);
+
+  // ── Label on front face ──
+  const nameArr=['BIO','REC','NON-BIO'], fgArr=['#88ffc0','#88c0ff','#ffc088'];
+  const frontLbl=new THREE.Mesh(
+    new THREE.PlaneGeometry(BOX_W*0.72, BOX_H*0.30),
+    new THREE.MeshBasicMaterial({
+      map:lbl(nameArr[i],fgArr[i],320,70,26), transparent:true, depthWrite:false}));
+  frontLbl.position.set(0, BOX_H*0.25, BOX_D/2+boxThk*.5+0.003);
+  g.add(frontLbl);
+
+  // ── Pull handle on BACK face (grips here to pull out) ──
+  // Main bar
+  const hBar=new THREE.Mesh(new THREE.BoxGeometry(BOX_W*0.42,W*0.8,W*1.6),matChrome);
+  hBar.position.set(0,0,-BOX_D/2-W*.8); g.add(hBar);
+  // Handle end caps (two small cylinders)
+  [-BOX_W*0.18, BOX_W*0.18].forEach(hx=>{
+    const cap=new THREE.Mesh(new THREE.CylinderGeometry(W*.44,W*.44,W*.9,12),matChrome);
+    cap.rotation.x=Math.PI/2;
+    cap.position.set(hx,0,-BOX_D/2-W*.8); g.add(cap);
+  });
+
+  // ── Label on BACK face (visible when pulled out) ──
+  const backLbl=new THREE.Mesh(
+    new THREE.PlaneGeometry(BOX_W*0.7, BOX_H*0.30),
+    new THREE.MeshBasicMaterial({
+      map:lbl(nameArr[i],fgArr[i],320,70,26), transparent:true, depthWrite:false}));
+  backLbl.rotation.y=Math.PI;
+  backLbl.position.set(0,BOX_H*0.15,-BOX_D/2-boxThk*.5-0.003);
+  g.add(backLbl);
+
+  // ── Corner reinforcement tabs on box ──
+  [[-BOX_W/2+boxThk,BOX_D/2-boxThk],[BOX_W/2-boxThk,BOX_D/2-boxThk],
+   [-BOX_W/2+boxThk,-BOX_D/2+boxThk],[BOX_W/2-boxThk,-BOX_D/2+boxThk]].forEach(([cx,cz])=>{
+    const tab=new THREE.Mesh(new THREE.BoxGeometry(W*.5,BOX_H,W*.5),matAccent);
+    tab.position.set(cx,0,cz); g.add(tab);
+  });
+
+  // ── Guide rails in the bay floor (2 parallel rails the box slides on) ──
+  [-BOX_W/2+W*.5, BOX_W/2-W*.5].forEach(rx=>{
+    const rail=new THREE.Mesh(
+      new THREE.BoxGeometry(W*.35, W*.35, BD+BOX_SLIDE+W),
+      new THREE.MeshStandardMaterial({color:0x1a2e48,roughness:0.4,metalness:0.7}));
+    rail.position.set(bx+rx, W*1.2, -(BOX_SLIDE+W)/2+BD/2);
+    scene.add(rail);
+  });
+
+  colBoxes.push({g, homeZ:0, curZ:0, tgtZ:0});
+});
+
+// Toggle collection boxes out (back) / in
+function toggleBins(){
+  boxesOut = !boxesOut;
+  const btn=document.getElementById('detach-btn');
+  colBoxes.forEach(b=>{ b.tgtZ = boxesOut ? -BOX_SLIDE : 0; });
+  btn.textContent = boxesOut ? '⬅ Slide Boxes Back In' : '⬆ Pull Out Collection Boxes';
+}
+document.getElementById('detach-btn').onclick = toggleBins;
+</script>
+
+<script>
+// ── WASTE ITEMS ──────────────────────────────────────
+const WI={
+  banana:{bay:0,label:'Biodegradable',    comp:'Compartment 1',color:0xf2cc28,icon:'🍌',geo:()=>{const g=new THREE.SphereGeometry(.20,12,8);g.scale(1,.55,1);return g;}},
+  leaf:  {bay:0,label:'Biodegradable',    comp:'Compartment 1',color:0x38b030,icon:'🍃',geo:()=>new THREE.TorusGeometry(.18,.04,8,14)},
+  plastic:{bay:1,label:'Recyclable',      comp:'Compartment 2',color:0x38b8e8,icon:'🧴',geo:()=>new THREE.CylinderGeometry(.11,.11,.46,14)},
+  paper: {bay:1,label:'Recyclable',       comp:'Compartment 2',color:0xe8e0cc,icon:'📄',geo:()=>new THREE.BoxGeometry(.42,.04,.52)},
+  metal: {bay:2,label:'Non-Biodegradable',comp:'Compartment 3',color:0xb0b8c0,icon:'🥫',geo:()=>new THREE.CylinderGeometry(.15,.15,.38,14)},
+  glass: {bay:2,label:'Non-Biodegradable',comp:'Compartment 3',color:0x80d0ff,icon:'🍶',geo:()=>new THREE.CylinderGeometry(.10,.14,.44,14)},
+};
+let wasteObj=null,activeBay=-1,activeType=null;
+
+// Particles
+const pGeo=new THREE.BufferGeometry();
+const PC=60,pPos=new Float32Array(PC*3),pVel=[];
+pGeo.setAttribute('position',new THREE.BufferAttribute(pPos,3));
+const pMat=new THREE.PointsMaterial({color:0x00e5ff,size:.09,transparent:true,opacity:0,depthWrite:false});
+scene.add(new THREE.Points(pGeo,pMat));
+let pOn=false,pT=0;
+function spark(x,y,z,col=0x00e5ff){
+  pMat.color.setHex(col);pVel.length=0;
+  for(let i=0;i<PC;i++){
+    pPos[i*3]=x+(Math.random()-.5)*.6; pPos[i*3+1]=y+(Math.random()-.5)*.6; pPos[i*3+2]=z+(Math.random()-.5)*.6;
+    pVel.push(new THREE.Vector3((Math.random()-.5)*2,Math.random()*3,(Math.random()-.5)*2));
+  }
+  pGeo.attributes.position.needsUpdate=true;
+  pMat.opacity=1;pOn=true;pT=0;
+}
+
+// ── UI ───────────────────────────────────────────────
+const notif  = document.getElementById('notif');
+const nIcon  = document.getElementById('notif-icon');
+const nTitle = document.getElementById('notif-title');
+const nSub   = document.getElementById('notif-sub');
+const nAct   = document.getElementById('notif-action');
+const sstep  = document.getElementById('sstep');
+const stext  = document.getElementById('stext');
+const pills  = ['pill-bio','pill-rec','pill-res'].map(id=>document.getElementById(id));
+const inds   = ['ind-bio', 'ind-rec', 'ind-res' ].map(id=>document.getElementById(id));
+
+const setSt =(e,t)=>{sstep.textContent=e;stext.textContent=t;};
+const showN =()=>{notif.style.display='flex';};
+const hideN =()=>{notif.style.display='none';};
+const rstP  =()=>pills.forEach(p=>p.className='bpill off');
+const litP  =i=>{rstP();pills[i].className='bpill on';};
+const rstI  =()=>inds.forEach(d=>d.classList.remove('active'));
+const litI  =i=>{rstI();inds[i].classList.add('active');};
+const disB  =v=>['banana','leaf','plastic','paper','metal','glass'].forEach(t=>{
+  const e=document.getElementById('btn-'+t);if(e)e.disabled=v;});
+
+function setPanelActive(idx,active){
+  const d=neonDivs[idx], g=d.dataset.glow;
+  if(active){
+    d.style.color='#fff';
+    d.style.textShadow=`0 0 6px ${g},0 0 16px ${g},0 0 32px ${g}`;
+    d.style.borderColor=g+'bb';
+  } else {
+    d.style.color=g+'65';
+    d.style.textShadow=`0 0 5px ${g}44`;
+    d.style.borderColor=g+'44';
+  }
+}
+
+// ── STATE MACHINE ────────────────────────────────────
+// idle → throwing → scanning → door_open → dropping → closing → idle
+let state='idle', sTimer=0;
+const THROW_START = new THREE.Vector3(.6, BH+1.8, BD/3);
+const HOLE_CENTER = new THREE.Vector3(0, BH+.05, 0);
+const SCAN_Y      = DET_Y+.12;
+const LAND_Y      = .46;
+
+function scanItem(type){
+  if(state!=='idle') return;
+  activeType=type; activeBay=WI[type].bay;
+  if(wasteObj){scene.remove(wasteObj);wasteObj=null;}
+  const def=WI[type];
+  wasteObj=new THREE.Mesh(def.geo(),new THREE.MeshStandardMaterial({
+    color:def.color,roughness:.42,metalness:def.color===0xb0b8c0?.6:.04}));
+  wasteObj.castShadow=true;
+  wasteObj.position.copy(THROW_START);
+  scene.add(wasteObj);
+  state='throwing'; sTimer=0;
+  disB(true); hideN();
+  scMat.emissive.setHex(0x001020);
+  setSt('🗑️','Item thrown into hole…');
+}
+
+function userPlaced(){
+  if(state!=='door_open') return;
+  hideN();
+  if(wasteObj) wasteObj.position.set(BAY_X[activeBay],BH*.5,0);
+  state='dropping'; sTimer=0;
+  setSt('✅','Placed — closing compartment…');
+}
+
+function resetAll(){
+  if(wasteObj){scene.remove(wasteObj);wasteObj=null;}
+  state='idle'; sTimer=0; activeBay=-1; activeType=null;
+  tgtDA[0]=tgtDA[1]=tgtDA[2]=0; rfTarget=0;
+  rstP(); rstI(); hideN();
+  [0,1,2].forEach(j=>setPanelActive(j,false));
+  scMat.emissive.setHex(0x001828);
+  scanLight.intensity=0;
+  setSt('🟢','Throw trash into the hole on top');
+  disB(false);
+}
+
+['banana','leaf','plastic','paper','metal','glass'].forEach(t=>{
+  const e=document.getElementById('btn-'+t);if(e)e.onclick=()=>scanItem(t);
+});
+nAct.onclick=userPlaced;
+document.getElementById('reset-btn').onclick=resetAll;
+
+// ── EXPLODE ──────────────────────────────────────────
+const shellOff=[
+  new THREE.Vector3(0,-3.5,0), new THREE.Vector3(-2.5,4,0), new THREE.Vector3(2.5,4,0),
+  new THREE.Vector3(0,4,-2.5), new THREE.Vector3(0,4,2.5),
+  new THREE.Vector3(-5,0,0),   new THREE.Vector3(5,0,0),
+  new THREE.Vector3(0,0,-5),   new THREE.Vector3(-4,0,3.5), new THREE.Vector3(4,0,3.5),
+  new THREE.Vector3(0,5,0),
+];
+const intOff=[
+  new THREE.Vector3(0,4,3.5), new THREE.Vector3(-5,.8,0),
+  new THREE.Vector3(-3.5,-1.5,-2.5), new THREE.Vector3(0,-1.5,-2.5), new THREE.Vector3(3.5,-1.5,-2.5),
+  new THREE.Vector3(5,.8,0),
+];
+const shellLbl={0:0,1:1,2:1,3:1,4:1,5:2,6:2,7:4,8:3,9:4,10:5};
+const intLbl={0:6,1:7,2:6,3:6,4:6,5:7};
+const elLabels=[];
+for(let i=0;i<=7;i++) elLabels.push(document.getElementById('el-'+i));
+
+function toScr(v3){const v=v3.clone().project(camera);return{x:(v.x*.5+.5)*innerWidth,y:(-v.y*.5+.5)*innerHeight};}
+function updL(f){
+  const show=f>.28,a=show?Math.min(1,(f-.28)/.2):0;
+  const ap=(mesh,li)=>{if(li===undefined||!elLabels[li])return;
+    elLabels[li].style.opacity=a;
+    if(show){const s=toScr(mesh.position);elLabels[li].style.left=(s.x+10)+'px';elLabels[li].style.top=(s.y-10)+'px';}};
+  parts.forEach(({mesh},pi)=>ap(mesh,shellLbl[pi]));
+  intParts.forEach(({mesh},pi)=>ap(mesh,intLbl[pi]));
+}
+let explF=0,explT=0;
+
+function setView(mode){
+  document.querySelectorAll('.vbtn').forEach(b=>b.classList.remove('on'));
+  document.getElementById('vbtn-'+mode).classList.add('on');
+  orb.target.set(0,2.8,0);
+  if     (mode==='normal') {explT=0;applyXr(false);camera.position.set(0,7,15);}
+  else if(mode==='explode'){explT=1;applyXr(false);camera.position.set(2,11,22);}
+  else if(mode==='xray')  {explT=0;applyXr(true); camera.position.set(0,7,15);}
+  else if(mode==='top')   {explT=0;applyXr(false);camera.position.set(0,22,.1);}
+  else if(mode==='side')  {explT=0;applyXr(false);camera.position.set(16,5,0);}
+}
+function applyXr(on){parts.forEach(({mesh})=>mesh.material=on?SCT:SC);}
+['normal','explode','xray','top','side'].forEach(m=>{
+  document.getElementById('vbtn-'+m).onclick=()=>setView(m);
+});
+</script>
+
+<script>
+// ── ANIMATE ──────────────────────────────────────────
+const clock=new THREE.Clock();
+
+function animate(){
+  requestAnimationFrame(animate);
+  const dt=Math.min(clock.getDelta(),.05);
+  orb.update();
+  updateNeonOverlays();
+
+  // Collection box slide animation (negative Z = out the back)
+  colBoxes.forEach(b=>{
+    b.curZ+=(b.tgtZ-b.curZ)*7*dt;
+    b.g.position.z=b.curZ;
+  });
+
+  // Doors
+  for(let i=0;i<3;i++){curDA[i]+=(tgtDA[i]-curDA[i])*9*dt; dPivots[i].rotation.x=curDA[i];}
+  rfAngle+=(rfTarget-rfAngle)*9*dt; rfPiv.rotation.z=rfAngle;
+
+  // Explode
+  explF+=(explT-explF)*3.5*dt;
+  parts.forEach(({mesh,home},pi)=>{
+    if(pi<shellOff.length){const o=shellOff[pi];mesh.position.set(home.x+o.x*explF,home.y+o.y*explF,home.z+o.z*explF);}
+  });
+  intParts.forEach(({mesh,home},pi)=>{
+    if(pi<intOff.length){const o=intOff[pi];mesh.position.set(home.x+o.x*explF,home.y+o.y*explF,home.z+o.z*explF);}
+  });
+  updL(explF);
+
+  // Particles
+  if(pOn){
+    pT+=dt; pMat.opacity=Math.max(0,1-pT*2.5);
+    for(let i=0;i<PC;i++){
+      pPos[i*3]+=pVel[i].x*dt;pPos[i*3+1]+=pVel[i].y*dt;pPos[i*3+2]+=pVel[i].z*dt;
+      pVel[i].y-=4*dt;
+    }
+    pGeo.attributes.position.needsUpdate=true;
+    if(pT>.9){pOn=false;pMat.opacity=0;}
+  }
+
+  // Idle screen pulse
+  if(state==='idle'){
+    const p=.5+.5*Math.sin(Date.now()*.002);
+    scMat.emissive.setRGB(0,p*.06,p*.16);
+  }
+  sTimer+=dt;
+
+  // THROWING
+  if(state==='throwing'&&wasteObj){
+    wasteObj.rotation.x+=4*dt; wasteObj.rotation.z+=2*dt;
+    wasteObj.position.lerp(HOLE_CENTER,Math.min(1,sTimer*2.2));
+    if(wasteObj.position.distanceTo(HOLE_CENTER)<.25||sTimer>1.0){
+      wasteObj.position.copy(HOLE_CENTER);
+      state='scanning'; sTimer=0;
+      scanLight.intensity=3;
+      spark(0,BH,0);
+      scMat.emissive.setHex(0x009944);
+      setSt('🔍','Scanning item…');
+    }
+  }
+
+  // SCANNING
+  if(state==='scanning'){
+    if(wasteObj){wasteObj.position.y-=1.0*dt; wasteObj.rotation.x+=2.5*dt;}
+    scanLight.intensity=3*(.6+.4*Math.sin(Date.now()*.016));
+    scMat.emissive.setRGB(0,.3+.2*Math.sin(Date.now()*.02),.5+.15*Math.sin(Date.now()*.02));
+    if(sTimer>1.2){
+      scanLight.intensity=0;
+      const def=WI[activeType];
+      const bc=['#1cbb5c','#38b8e8','#e8a038'];
+      litP(activeBay); litI(activeBay);
+      scMat.emissive.setHex([0x003d1a,0x001e3d,0x3d1e00][activeBay]);
+      spark(0,SCAN_Y,0,def.color);
+      tgtDA[activeBay]=DOOR_OPEN;
+      rfTarget=activeBay===0?.48:activeBay===2?-.48:0;
+      [0,1,2].forEach(j=>setPanelActive(j,j===activeBay));
+      nIcon.textContent=def.icon;
+      nTitle.textContent=`${def.label} Detected`;
+      nTitle.style.color=bc[activeBay];
+      nSub.textContent=`${def.comp} is open — place waste inside`;
+      const ni=document.getElementById('notif-inner');
+      ni.style.borderColor=bc[activeBay];
+      ni.style.background=activeBay===0?'#081510':activeBay===1?'#08101a':'#180e04';
+      showN();
+      setSt('🚪',`${def.comp} open`);
+      if(wasteObj) wasteObj.position.y=SCAN_Y;
+      state='door_open'; sTimer=0;
+    }
+  }
+
+  // DOOR_OPEN
+  if(state==='door_open'&&wasteObj){
+    wasteObj.position.y=SCAN_Y+Math.sin(sTimer*2)*.025;
+    wasteObj.rotation.y+=.4*dt;
+  }
+
+  // DROPPING
+  if(state==='dropping'&&wasteObj){
+    wasteObj.position.x+=(BAY_X[activeBay]-wasteObj.position.x)*7*dt;
+    wasteObj.position.y+=(LAND_Y-wasteObj.position.y)*5*dt;
+    wasteObj.position.z+=(0-wasteObj.position.z)*7*dt;
+    wasteObj.rotation.x+=5*dt;
+    if(sTimer>.9){scene.remove(wasteObj);wasteObj=null;state='closing';sTimer=0;}
+  }
+
+  // CLOSING
+  if(state==='closing'){
+    if(sTimer>.3){tgtDA[activeBay]=0;rfTarget=0;}
+    if(sTimer>1.1){
+      rstI();rstP();[0,1,2].forEach(j=>setPanelActive(j,false));
+      scMat.emissive.setHex(0x001828);
+      state='idle';sTimer=0;disB(false);
+      setSt('🟢','Throw trash into the hole on top');
+    }
+  }
+
+  renderer.render(scene,camera);
+}
+animate();
+</script>
+</body>
+</html>

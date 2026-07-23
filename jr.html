@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gravity-Friendly Water Filtration System - 3D Interactive Model</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            overflow-x: hidden;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            padding: 30px 20px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        h1 {
+            font-size: 2.5em;
+            color: #1e3a8a;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .subtitle {
+            font-size: 1.2em;
+            color: #10b981;
+            margin-bottom: 10px;
+        }
+
+        .tagline {
+            font-size: 1em;
+            color: #6b7280;
+            font-style: italic;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 2fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .info-panel {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .info-card {
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            cursor: pointer;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .info-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+        }
+
+        .info-card h3 {
+            font-size: 1.2em;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .info-card p {
+            font-size: 0.9em;
+            line-height: 1.6;
+        }
+
+        .number-badge {
+            background: white;
+            color: #1e3a8a;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+
+        .canvas-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+
+        #canvas3d {
+            width: 100%;
+            height: 600px;
+            border-radius: 10px;
+            background: linear-gradient(180deg, #e0f2fe 0%, #fff 100%);
+            cursor: grab;
+        }
+
+        #canvas3d:active {
+            cursor: grabbing;
+        }
+
+        .controls {
+            margin-top: 15px;
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .control-btn {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .control-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(16, 185, 129, 0.4);
+        }
+
+        .benefits-section {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+        }
+
+        .benefits-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .benefit-card {
+            background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #10b981;
+            transition: transform 0.3s ease;
+        }
+
+        .benefit-card:hover {
+            transform: translateX(5px);
+        }
+
+        .benefit-card h4 {
+            color: #065f46;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+
+        .flow-summary {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+        }
+
+        .connections-section {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .connection-card {
+            background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            border-left: 4px solid #3b82f6;
+        }
+
+        .connection-card h4 {
+            color: #1e3a8a;
+            margin-bottom: 8px;
+            font-size: 1em;
+        }
+
+        .connection-card p {
+            font-size: 0.9em;
+            color: #475569;
+            margin: 0;
+        }
+
+        .flow-steps {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 20px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .flow-step {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            flex: 1;
+            min-width: 120px;
+        }
+
+        .flow-arrow {
+            font-size: 2em;
+            color: #3b82f6;
+        }
+
+        .important-notes {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border: 2px solid #f59e0b;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .important-notes h4 {
+            color: #92400e;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .important-notes ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .important-notes li {
+            padding: 8px 0;
+            padding-left: 25px;
+            position: relative;
+        }
+
+        .important-notes li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #10b981;
+            font-weight: bold;
+        }
+
+        @media (max-width: 1024px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #3b82f6;
+        }
+
+        .highlight {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.7;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🌊 Gravity-Friendly Water Filtration System</h1>
+            <p class="subtitle">Natural filtration. No pumps. Just gravity. 🍃</p>
+            <p class="tagline">CLEANER • SAFER • SUSTAINABLE</p>
+        </header>
+
+        <div class="main-content">
+            <!-- Left Panel: How It Works -->
+            <div class="info-panel">
+                <h2 style="color: #1e3a8a; margin-bottom: 20px;">💧 WHY IT WORKS</h2>
+                
+                <div class="info-card">
+                    <h3><span class="number-badge">1</span> Feed Container</h3>
+                    <p>Store and allow sediment to settle. Removes large particles first.</p>
+                </div>
+
+                <div class="info-card">
+                    <h3>🔼 Place Higher</h3>
+                    <p>Higher position (HIGHEST ELEVATION) ensures smooth gravity flow.</p>
+                </div>
+
+                <div class="info-card">
+                    <h3>☀️ Solar Panel</h3>
+                    <p>Powers the UV light. Clean energy, clean water.</p>
+                </div>
+            </div>
+
+            <!-- Center: 3D Canvas -->
+            <div class="canvas-container">
+                <div class="loading" id="loading">Loading 3D Model...</div>
+                <canvas id="canvas3d"></canvas>
+                <div class="controls">
+                    <button class="control-btn" onclick="resetView()">🔄 Reset View</button>
+                    <button class="control-btn" onclick="toggleRotation()">⏯️ Toggle Rotation</button>
+                    <button class="control-btn" onclick="showWaterFlow()">💧 Show Water Flow</button>
+                </div>
+            </div>
+
+            <!-- Right Panel: Filtration Steps -->
+            <div class="info-panel">
+                <h2 style="color: #1e3a8a; margin-bottom: 20px;">🔬 Filtration Steps</h2>
+                
+                <div class="info-card" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+                    <h3><span class="number-badge">2</span> Tube 1</h3>
+                    <p><strong>Banana Fiber Filter</strong><br>Removes large particles like dirt, sand, and debris.</p>
+                </div>
+
+                <div class="info-card" style="background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);">
+                    <h3><span class="number-badge">3</span> Tube 2</h3>
+                    <p><strong>UV Light Chamber</strong><br>Kills bacteria and harmful micro-organisms.</p>
+                </div>
+
+                <div class="info-card" style="background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);">
+                    <h3><span class="number-badge">4</span> Tube 3</h3>
+                    <p><strong>Activated Carbon Filter</strong><br>Improves taste, removes odors, purifies water, and maintains low pH level.</p>
+                </div>
+
+                <div class="info-card" style="background: linear-gradient(135deg, #64748b 0%, #475569 100%);">
+                    <h3><span class="number-badge">5</span> Faucet</h3>
+                    <p>Cleaned water comes out. Ready to drink! 💧</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Benefits Section -->
+        <div class="benefits-section">
+            <h2 style="color: #1e3a8a; margin-bottom: 10px; text-align: center;">✨ Key Benefits</h2>
+            <div class="benefits-grid">
+                <div class="benefit-card">
+                    <h4>💧 No Pumps - 100% Gravity Fed</h4>
+                    <p>Uses gravity to move water from one stage to the next. No electricity for pumping—saves energy.</p>
+                </div>
+                <div class="benefit-card">
+                    <h4>☀️ Solar Powered</h4>
+                    <p>Clean energy powers the UV light chamber for maximum purity.</p>
+                </div>
+                <div class="benefit-card">
+                    <h4>🔬 Multi-Stage Filtration</h4>
+                    <p>Three stages ensure maximum water quality and safety.</p>
+                </div>
+                <div class="benefit-card">
+                    <h4>🌱 Eco-Friendly</h4>
+                    <p>Good for you and the planet. Sustainable and cost-effective.</p>
+                </div>
+                <div class="benefit-card">
+                    <h4>🛠️ Easy to Maintain</h4>
+                    <p>Simple design with easily replaceable filter materials.</p>
+                </div>
+            </div>
+
+            <div class="important-notes">
+                <h4>⚠️ IMPORTANT NOTES</h4>
+                <ul>
+                    <li>Each tube must be lower than the previous one</li>
+                    <li>Keep tubes upright to prevent leaks</li>
+                    <li>Clean or replace filter materials regularly</li>
+                    <li>Clean water for daily use</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Flow Summary -->
+        <div class="flow-summary">
+            <h2 style="color: #1e3a8a; margin-bottom: 10px; text-align: center;">📊 Flow Summary</h2>
+            <div class="flow-steps">
+                <div class="flow-step">
+                    <div style="font-size: 2em;">🗑️</div>
+                    <strong>Feed Container</strong>
+                    <p style="font-size: 0.9em; margin-top: 5px;">(HIGH)</p>
+                </div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-step">
+                    <div style="font-size: 2em;">🟤</div>
+                    <strong>Banana Fiber</strong>
+                    <p style="font-size: 0.9em; margin-top: 5px;">Filter</p>
+                </div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-step">
+                    <div style="font-size: 2em;">💜</div>
+                    <strong>UV Light</strong>
+                    <p style="font-size: 0.9em; margin-top: 5px;">Chamber</p>
+                </div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-step">
+                    <div style="font-size: 2em;">⚫</div>
+                    <strong>Carbon</strong>
+                    <p style="font-size: 0.9em; margin-top: 5px;">Filter</p>
+                </div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-step">
+                    <div style="font-size: 2em;">🚰</div>
+                    <strong>Faucet</strong>
+                    <p style="font-size: 0.9em; margin-top: 5px;">(Clean Water)</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Detailed Connections Section -->
+        <div class="connections-section">
+            <h2 style="color: #1e3a8a; margin-bottom: 20px; text-align: center;">🔗 Connection Details</h2>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px;">
+                <div class="connection-card">
+                    <h4>⚫ Connection 1: Feed → Banana Filter</h4>
+                    <p>✓ Black curved pipe with cyan connectors<br>
+                    ✓ Outlet valve on feed container<br>
+                    ✓ Inlet connector on Tube 1<br>
+                    ✓ Flow direction indicators</p>
+                </div>
+                <div class="connection-card">
+                    <h4>⚫ Connection 2: Banana → UV Chamber</h4>
+                    <p>✓ Bottom outlet from Tube 1<br>
+                    ✓ Top inlet to Tube 2<br>
+                    ✓ Black flexible curved piping<br>
+                    ✓ Adjustable valve midpoint</p>
+                </div>
+                <div class="connection-card">
+                    <h4>⚫ Connection 3: UV → Carbon Filter</h4>
+                    <p>✓ UV chamber bottom outlet<br>
+                    ✓ Carbon filter top inlet<br>
+                    ✓ Black pipe with cyan connectors<br>
+                    ✓ Flow control valve</p>
+                </div>
+                <div class="connection-card">
+                    <h4>⚫ Connection 4: Carbon → Faucet</h4>
+                    <p>✓ Final outlet from Tube 3<br>
+                    ✓ Direct connection to faucet<br>
+                    ✓ Black pipe with cyan end<br>
+                    ✓ Ready to dispense</p>
+                </div>
+            </div>
+            <div style="margin-top: 20px; padding: 15px; background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); border-radius: 10px; border: 2px solid #1a1a1a;">
+                <h4 style="color: #1e3a8a; margin-bottom: 10px;">🔧 Connection Features:</h4>
+                <ul style="list-style: none; padding-left: 0;">
+                    <li style="padding: 5px 0; padding-left: 25px; position: relative;">
+                        <span style="position: absolute; left: 0; color: #10b981; font-weight: bold;">✓</span>
+                        Black main pipes (realistic hose material)
+                    </li>
+                    <li style="padding: 5px 0; padding-left: 25px; position: relative;">
+                        <span style="position: absolute; left: 0; color: #10b981; font-weight: bold;">✓</span>
+                        Cyan/turquoise connector segments at ends
+                    </li>
+                    <li style="padding: 5px 0; padding-left: 25px; position: relative;">
+                        <span style="position: absolute; left: 0; color: #10b981; font-weight: bold;">✓</span>
+                        Control valves for flow regulation
+                    </li>
+                    <li style="padding: 5px 0; padding-left: 25px; position: relative;">
+                        <span style="position: absolute; left: 0; color: #10b981; font-weight: bold;">✓</span>
+                        Curved pipes for smooth water flow
+                    </li>
+                    <li style="padding: 5px 0; padding-left: 25px; position: relative;">
+                        <span style="position: absolute; left: 0; color: #10b981; font-weight: bold;">✓</span>
+                        Green arrow indicators showing flow direction
+                    </li>
+                    <li style="padding: 5px 0; padding-left: 25px; position: relative;">
+                        <span style="position: absolute; left: 0; color: #10b981; font-weight: bold;">✓</span>
+                        Leak-proof sealed connections
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+// ── SCENE SETUP ──────────────────────────────────────────────────
+const canvas = document.getElementById('canvas3d');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+renderer.setPixelRatio(window.devicePixelRatio);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+function resize() {
+  renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
+  camera.aspect = canvas.clientWidth / canvas.clientHeight;
+  camera.updateProjectionMatrix();
+}
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0xe8f4fd);
+scene.fog = new THREE.Fog(0xe8f4fd, 18, 35);
+
+const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
+camera.position.set(0, 5, 12);
+camera.lookAt(0, 0, 0);
+
+// ── LIGHTS ───────────────────────────────────────────────────────
+scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+const sun = new THREE.DirectionalLight(0xffeedd, 1.2);
+sun.position.set(5, 10, 8); sun.castShadow = true;
+sun.shadow.mapSize.set(1024, 1024);
+scene.add(sun);
+scene.add(new THREE.DirectionalLight(0x8899ff, 0.4)).position.set(-5, 3, -5);
+
+// ── GROUND ───────────────────────────────────────────────────────
+const ground = new THREE.Mesh(
+  new THREE.PlaneGeometry(20, 20),
+  new THREE.MeshStandardMaterial({ color: 0xc8e6f5, roughness: 0.9 })
+);
+ground.rotation.x = -Math.PI / 2;
+ground.position.y = -4.5;
+ground.receiveShadow = true;
+scene.add(ground);
+
+// ── HELPERS ──────────────────────────────────────────────────────
+function box(w, h, d, color, x, y, z, rough = 0.7) {
+  const m = new THREE.Mesh(
+    new THREE.BoxGeometry(w, h, d),
+    new THREE.MeshStandardMaterial({ color, roughness: rough, metalness: 0.1 })
+  );
+  m.position.set(x, y, z);
+  m.castShadow = true; m.receiveShadow = true;
+  scene.add(m); return m;
+}
+function cyl(rt, rb, h, color, x, y, z, rough = 0.6, emit = 0) {
+  const mat = new THREE.MeshStandardMaterial({ color, roughness: rough, metalness: 0.15,
+    emissive: emit ? new THREE.Color(emit) : undefined, emissiveIntensity: emit ? 0.4 : 0,
+    transparent: true, opacity: 0.82 });
+  const m = new THREE.Mesh(new THREE.CylinderGeometry(rt, rb, h, 32), mat);
+  m.position.set(x, y, z);
+  m.castShadow = true; m.receiveShadow = true;
+  scene.add(m); return m;
+}
+function pipe(x1, y1, z1, x2, y2, z2, color = 0x111111) {
+  const dir = new THREE.Vector3(x2 - x1, y2 - y1, z2 - z1);
+  const len = dir.length();
+  const mid = new THREE.Vector3((x1 + x2) / 2, (y1 + y2) / 2, (z1 + z2) / 2);
+  const m = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.06, 0.06, len, 12),
+    new THREE.MeshStandardMaterial({ color, roughness: 0.5, metalness: 0.3 })
+  );
+  m.position.copy(mid);
+  m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.normalize());
+  scene.add(m); return m;
+}
+
+// ── COMPONENTS ───────────────────────────────────────────────────
+// Layout: cascading heights left → right
+// Feed container (leftmost, highest) at x=-4.5, y=2.0
+// Tube 1 Banana Fiber at x=-1.5, y=0.5
+// Tube 2 UV Chamber at x=1.5, y=-1.0
+// Tube 3 Carbon Filter at x=4.5, y=-2.5
+// Faucet bucket at x=4.5, y=-4.0
+
+// 1. Feed Container (large bucket)
+box(1.2, 1.8, 1.2, 0x4fc3f7, -4.5, 2.1, 0);          // body
+box(1.3, 0.12, 1.3, 0x0288d1, -4.5, 3.06, 0);          // lid
+cyl(0.12, 0.12, 0.3, 0x00acc1, -4.5, 1.1, 0.5);        // outlet valve
+
+// Stand for feed
+box(0.1, 1.0, 0.1, 0x78909c, -4.8, 0.5, -0.4);
+box(0.1, 1.0, 0.1, 0x78909c, -4.2, 0.5, -0.4);
+box(0.1, 1.0, 0.1, 0x78909c, -4.8, 0.5, 0.4);
+box(0.1, 1.0, 0.1, 0x78909c, -4.2, 0.5, 0.4);
+box(1.2, 0.08, 1.0, 0x78909c, -4.5, 0.04, 0);
+
+// 2. Tube 1 – Banana Fiber Filter (brown)
+cyl(0.38, 0.38, 2.2, 0xa1714a, -1.5, 0.6, 0, 0.85);   // tube body
+cyl(0.41, 0.41, 0.12, 0x795548, -1.5, 1.76, 0);         // top cap
+cyl(0.41, 0.41, 0.12, 0x795548, -1.5, -0.56, 0);        // bottom cap
+cyl(0.09, 0.09, 0.28, 0x00acc1, -1.5, 1.88, 0);         // inlet connector
+cyl(0.09, 0.09, 0.28, 0x00acc1, -1.5, -0.7, 0);         // outlet connector
+// label strip
+box(0.02, 0.4, 0.7, 0xd4a256, -1.88, 0.6, 0);
+
+// 3. Tube 2 – UV Light Chamber (purple glow)
+cyl(0.38, 0.38, 2.2, 0x7b1fa2, 1.5, -0.9, 0, 0.3, 0x9c27b0); // tube body
+cyl(0.41, 0.41, 0.12, 0x4a148c, 1.5, 0.26, 0);          // top cap
+cyl(0.41, 0.41, 0.12, 0x4a148c, 1.5, -2.06, 0);          // bottom cap
+cyl(0.09, 0.09, 0.28, 0x00acc1, 1.5, 0.38, 0);           // inlet
+cyl(0.09, 0.09, 0.28, 0x00acc1, 1.5, -2.2, 0);           // outlet
+// UV lamp inside (emissive)
+cyl(0.06, 0.06, 1.8, 0xce93d8, 1.5, -0.9, 0, 0.1, 0xd500f9);
+// Solar panel on top
+box(0.6, 0.06, 0.4, 0x1565c0, 1.5, 0.55, 0);
+box(0.04, 0.4, 0.04, 0x37474f, 1.5, 0.38, 0);
+
+// 4. Tube 3 – Activated Carbon Filter (dark grey)
+cyl(0.38, 0.38, 2.2, 0x37474f, 4.5, -2.4, 0, 0.9);     // tube body
+cyl(0.41, 0.41, 0.12, 0x263238, 4.5, -1.24, 0);          // top cap
+cyl(0.41, 0.41, 0.12, 0x263238, 4.5, -3.56, 0);          // bottom cap
+cyl(0.09, 0.09, 0.28, 0x00acc1, 4.5, -1.12, 0);          // inlet
+cyl(0.09, 0.09, 0.28, 0x00acc1, 4.5, -3.7, 0);           // outlet
+// label strip
+box(0.02, 0.4, 0.7, 0x607d8b, 4.12, -2.4, 0);
+
+// 5. Faucet / output bucket
+box(0.7, 0.6, 0.7, 0xe3f2fd, 4.5, -4.4, 0);             // bucket
+box(0.72, 0.06, 0.72, 0x90caf9, 4.5, -4.07, 0);          // rim
+cyl(0.04, 0.04, 0.5, 0x546e7a, 4.5, -3.94, 0);           // faucet pipe
+cyl(0.07, 0.05, 0.14, 0x37474f, 4.5, -4.18, 0.2);        // spout
+
+// ── PIPES (connecting stages) ─────────────────────────────────────
+// Feed → Tube 1
+pipe(-4.5, 1.1, 0.5, -4.5, 0.9, 0.5, 0x111111);
+pipe(-4.5, 0.9, 0.5, -1.5, 1.88, 0.5, 0x111111);
+pipe(-1.5, 1.88, 0.5, -1.5, 1.88, 0, 0x00acc1);
+
+// Tube 1 → Tube 2
+pipe(-1.5, -0.7, 0, -1.5, -0.9, 0.4, 0x111111);
+pipe(-1.5, -0.9, 0.4, 1.5, 0.38, 0.4, 0x111111);
+pipe(1.5, 0.38, 0.4, 1.5, 0.38, 0, 0x00acc1);
+
+// Tube 2 → Tube 3
+pipe(1.5, -2.2, 0, 1.5, -2.4, 0.4, 0x111111);
+pipe(1.5, -2.4, 0.4, 4.5, -1.12, 0.4, 0x111111);
+pipe(4.5, -1.12, 0.4, 4.5, -1.12, 0, 0x00acc1);
+
+// Tube 3 → Faucet
+pipe(4.5, -3.7, 0, 4.5, -4.0, 0, 0x111111);
+
+// Flow arrows (green arrow discs)
+[[-3.2, 1.6, 0.5], [0.0, 0.2, 0.4], [3.0, -1.5, 0.4]].forEach(([x, y, z]) => {
+  const arrow = new THREE.Mesh(
+    new THREE.ConeGeometry(0.12, 0.28, 8),
+    new THREE.MeshStandardMaterial({ color: 0x10b981, emissive: new THREE.Color(0x10b981), emissiveIntensity: 0.5 })
+  );
+  arrow.position.set(x, y, z);
+  arrow.rotation.z = -Math.PI / 2;
+  scene.add(arrow);
+});
+
+document.getElementById('loading').style.display = 'none';
+
+// ── WATER PARTICLES ──────────────────────────────────────────────
+const waterParticles = [];
+const waterMat = new THREE.MeshBasicMaterial({ color: 0x29b6f6, transparent: true, opacity: 0.7 });
+const waterGeo = new THREE.SphereGeometry(0.05, 6, 6);
+let waterFlowActive = false;
+function spawnWater() {
+  const stages = [
+    { x: -4.5, yStart: 1.0, yEnd: -0.5, z: 0.4 },
+    { x: -1.5, yStart: 1.7, yEnd: -0.6, z: 0 },
+    { x: 1.5,  yStart: 0.2, yEnd: -2.1, z: 0 },
+    { x: 4.5,  yStart: -1.1, yEnd: -3.6, z: 0 },
+  ];
+  stages.forEach(s => {
+    const p = new THREE.Mesh(waterGeo, waterMat);
+    p.position.set(s.x + (Math.random() - 0.5) * 0.3, s.yStart, s.z);
+    p.userData = { yEnd: s.yEnd, speed: 0.02 + Math.random() * 0.02 };
+    scene.add(p); waterParticles.push(p);
+  });
+}
+
+// ── ORBIT CONTROLS (manual) ───────────────────────────────────────
+let isDragging = false, prevMouse = { x: 0, y: 0 };
+let spherical = { theta: 0, phi: Math.PI / 3, radius: 14 };
+let autoRotate = true;
+
+canvas.addEventListener('mousedown', e => { isDragging = true; prevMouse = { x: e.clientX, y: e.clientY }; autoRotate = false; });
+canvas.addEventListener('mouseup', () => isDragging = false);
+canvas.addEventListener('mousemove', e => {
+  if (!isDragging) return;
+  spherical.theta -= (e.clientX - prevMouse.x) * 0.005;
+  spherical.phi = Math.max(0.2, Math.min(Math.PI / 2.1, spherical.phi - (e.clientY - prevMouse.y) * 0.005));
+  prevMouse = { x: e.clientX, y: e.clientY };
+});
+canvas.addEventListener('wheel', e => {
+  spherical.radius = Math.max(6, Math.min(22, spherical.radius + e.deltaY * 0.02));
+});
+
+function updateCamera() {
+  camera.position.set(
+    spherical.radius * Math.sin(spherical.phi) * Math.sin(spherical.theta),
+    spherical.radius * Math.cos(spherical.phi) + 0,
+    spherical.radius * Math.sin(spherical.phi) * Math.cos(spherical.theta)
+  );
+  camera.lookAt(0, 0, 0);
+}
+
+// ── BUTTON CONTROLS ───────────────────────────────────────────────
+function resetView() {
+  spherical = { theta: 0, phi: Math.PI / 3, radius: 14 };
+  autoRotate = true;
+}
+function toggleRotation() {
+  autoRotate = !autoRotate;
+}
+function showWaterFlow() {
+  waterFlowActive = !waterFlowActive;
+  if (waterFlowActive) spawnWater();
+}
+
+// ── ANIMATE ───────────────────────────────────────────────────────
+function animate() {
+  requestAnimationFrame(animate);
+  resize();
+  if (autoRotate) spherical.theta += 0.004;
+  updateCamera();
+
+  // water particles
+  if (waterFlowActive && Math.random() < 0.15) spawnWater();
+  for (let i = waterParticles.length - 1; i >= 0; i--) {
+    const p = waterParticles[i];
+    p.position.y -= p.userData.speed;
+    if (p.position.y < p.userData.yEnd) {
+      scene.remove(p); waterParticles.splice(i, 1);
+    }
+  }
+
+  renderer.render(scene, camera);
+}
+animate();
+    </script>
+</body>
+</html>

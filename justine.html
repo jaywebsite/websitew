@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Smart Blind Stick Pro – 3D Exploded View</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0d1117;font-family:'Segoe UI',sans-serif;overflow:hidden;color:#eee}
+canvas{position:fixed;inset:0;display:block}
+#ov{z-index:4;pointer-events:none}
+#ui{position:fixed;top:16px;left:16px;z-index:20;background:rgba(5,14,5,.93);
+    padding:16px 18px;border-radius:12px;border:1px solid #2d7a2d;width:215px}
+#ui h2{font-size:13px;color:#4caf50;letter-spacing:1px;margin-bottom:2px}
+#ui p{font-size:10px;color:#777;margin-bottom:10px}
+.btn{display:block;width:100%;margin:4px 0;padding:8px 12px;border-radius:7px;
+     border:1px solid #4caf50;background:transparent;color:#4caf50;cursor:pointer;
+     font-size:12px;transition:.2s;text-align:left}
+.btn:hover,.btn.on{background:#4caf50;color:#000;font-weight:700}
+.hint{font-size:10px;color:#555;line-height:1.8;margin-top:8px}
+#statsBar{position:fixed;bottom:0;left:0;right:0;z-index:20;
+  background:rgba(0,0,0,.93);border-top:1px solid #1c401c;
+  display:flex;transform:translateY(100%);transition:transform .5s ease}
+#statsBar.show{transform:translateY(0)}
+.stat{flex:1;text-align:center;padding:9px 4px;border-right:1px solid #1a381a}
+.stat:last-child{border:none}
+.sv{font-size:14px;font-weight:700;color:#4caf50}
+.sl{font-size:9px;color:#666;text-transform:uppercase;letter-spacing:.4px;margin-top:2px}
+#panel{position:fixed;right:16px;top:16px;z-index:20;width:215px;
+  background:rgba(5,14,5,.93);border:1px solid #1e4d1e;border-radius:12px;
+  padding:14px 16px;transform:translateX(250px);transition:transform .4s ease}
+#panel.show{transform:translateX(0)}
+#panel h4{color:#4caf50;font-size:12px;letter-spacing:.8px;margin-bottom:10px;
+  border-bottom:1px solid #1e3c1e;padding-bottom:6px}
+.dr{display:flex;justify-content:space-between;margin:5px 0;font-size:11px}
+.dk{color:#777}.dv{color:#e0e0e0;font-weight:600;text-align:right}
+.dd{margin-top:10px;padding:7px 9px;border-radius:6px;background:rgba(76,175,80,.1);
+  border:1px solid #2d5c2d;color:#a5d6a7;font-size:10px;line-height:1.6}
+.ann{position:fixed;z-index:15;pointer-events:none;opacity:0;
+  transition:opacity .35s;transform:translate(-50%,-100%)}
+.ann.show{opacity:1}
+.abox{background:rgba(0,0,0,.92);border:1px solid #3d7a3d;border-radius:8px;
+  padding:7px 10px;min-width:130px;max-width:178px;margin-bottom:6px;
+  box-shadow:0 0 16px rgba(76,175,80,.2)}
+.atitle{color:#4caf50;font-size:11px;font-weight:700;margin-bottom:4px;letter-spacing:.3px}
+.arow{display:flex;justify-content:space-between;gap:6px;font-size:10px;color:#999;margin:2px 0}
+.arow span{color:#ddd;text-align:right}
+.atag{display:inline-block;margin-top:5px;padding:2px 7px;border-radius:4px;
+  font-size:9px;font-weight:700;letter-spacing:.5px}
+#htip{position:fixed;z-index:30;background:rgba(0,0,0,.95);border:1px solid #4caf50;
+  color:#fff;padding:5px 12px;border-radius:6px;font-size:11px;display:none;pointer-events:none}
+</style>
+</head>
+<body>
+<canvas id="c3d"></canvas>
+<canvas id="ov"></canvas>
+<div id="ui">
+  <h2>SMART BLIND STICK PRO</h2>
+  <p>Intelligent Mobility Aid · IP65</p>
+  <button class="btn on" id="bA">⬛ Assembled View</button>
+  <button class="btn"    id="bE">💥 Exploded View</button>
+  <button class="btn"    id="bAn">▶ Animate Explode</button>
+  <button class="btn"    id="bW">◻ Wireframe</button>
+  <div class="hint">🖱 Drag · Scroll · Right-drag<br>💡 Click part → details</div>
+</div>
+<div id="statsBar">
+  <div class="stat"><div class="sv">320g</div><div class="sl">Weight</div></div>
+  <div class="stat"><div class="sv">75–110cm</div><div class="sl">Length</div></div>
+  <div class="stat"><div class="sv">2000mAh</div><div class="sl">Battery</div></div>
+  <div class="stat"><div class="sv">20 hrs</div><div class="sl">Runtime</div></div>
+  <div class="stat"><div class="sv">4 m</div><div class="sl">Detect</div></div>
+  <div class="stat"><div class="sv">BT 5.0</div><div class="sl">Wireless</div></div>
+  <div class="stat"><div class="sv">IP65</div><div class="sl">Protection</div></div>
+  <div class="stat"><div class="sv">2.5 hrs</div><div class="sl">Charge</div></div>
+</div>
+<div id="panel">
+  <h4 id="ptitle">Component</h4>
+  <div id="prows"></div>
+  <div class="dd" id="pdesc"></div>
+</div>
+<div id="htip"></div>
+<script>
+// Catch ALL errors and show them on screen
+window.onerror = function(msg, src, line, col, err) {
+  var d = document.createElement('div');
+  d.style.cssText = 'position:fixed;top:0;left:0;right:0;background:red;color:#fff;padding:12px;z-index:9999;font-size:13px;font-family:monospace;white-space:pre-wrap';
+  d.textContent = 'ERROR: ' + msg + '\n' + (src||'') + ':' + line;
+  document.body.appendChild(d);
+};
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+  // make OrbitControls available as window.OrbitControls
+  if(window.THREE && THREE.OrbitControls) window.OrbitControls = THREE.OrbitControls;
+</script>
+<script>
+// ── VERIFY THREE LOADED ───────────────────────────────────────────
+if(!window.THREE || !window.THREE.Scene){
+  document.body.innerHTML='<h1 style="color:red;padding:40px">THREE.js failed to load. Scene=' + (window.THREE && window.THREE.Scene) + '</h1>';
+  throw new Error('THREE not loaded');
+}
+if(!window.OrbitControls){
+  document.body.innerHTML='<h1 style="color:red;padding:40px">OrbitControls failed to load</h1>';
+  throw new Error('OrbitControls not loaded');
+}
+const THREE = window.THREE;
+</script>
+
+<script>
+// ── RENDERER ─────────────────────────────────────────────────────
+const c3d = document.getElementById('c3d');
+const ov  = document.getElementById('ov');
+const ctx = ov.getContext('2d');
+const renderer = new THREE.WebGLRenderer({canvas:c3d, antialias:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.shadowMap.enabled = true;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+
+const camera = new THREE.PerspectiveCamera(42, innerWidth/innerHeight, 0.01, 200);
+camera.position.set(0, 1.5, 9);
+
+function resize(){
+  renderer.setSize(innerWidth, innerHeight);
+  ov.width = innerWidth; ov.height = innerHeight;
+  camera.aspect = innerWidth/innerHeight;
+  camera.updateProjectionMatrix();
+}
+window.addEventListener('resize', resize);
+resize();
+
+// ── SCENE ────────────────────────────────────────────────────────
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0d1117);
+scene.fog = new THREE.FogExp2(0x0d1117, 0.009);
+
+const controls = new OrbitControls(camera, c3d);
+controls.enableDamping = true; controls.dampingFactor = 0.07;
+controls.minDistance = 2; controls.maxDistance = 22;
+controls.target.set(0, 0, 0);
+
+// ── LIGHTS ───────────────────────────────────────────────────────
+scene.add(new THREE.AmbientLight(0xffffff, 0.55));
+const sun = new THREE.DirectionalLight(0xffffff, 1.3);
+sun.position.set(4, 10, 6); sun.castShadow = true; scene.add(sun);
+const rim = new THREE.DirectionalLight(0x4caf50, 0.45);
+rim.position.set(-6, 2, -4); scene.add(rim);
+const fill = new THREE.PointLight(0x00bcd4, 0.8, 28);
+fill.position.set(2, 0, 4); scene.add(fill);
+
+// ── GRID ─────────────────────────────────────────────────────────
+const grid = new THREE.GridHelper(28, 56, 0x1a3a1a, 0x131a13);
+grid.position.y = -4.3; scene.add(grid);
+
+// ── MATERIALS ────────────────────────────────────────────────────
+const M = {
+  handle: new THREE.MeshStandardMaterial({color:0x1e1e1e, roughness:.3, metalness:.6}),
+  rubber: new THREE.MeshStandardMaterial({color:0x0a0a0a, roughness:.9}),
+  panel:  new THREE.MeshStandardMaterial({color:0x1a1a1a, roughness:.2, metalness:.8}),
+  disp:   new THREE.MeshStandardMaterial({color:0x001500, roughness:.1, emissive:new THREE.Color(0x00ff55), emissiveIntensity:.7}),
+  batt:   new THREE.MeshStandardMaterial({color:0x607d8b, roughness:.5, metalness:.5}),
+  upper:  new THREE.MeshStandardMaterial({color:0xdcdcdc, roughness:.12, metalness:.88}),
+  lower:  new THREE.MeshStandardMaterial({color:0xb8b8b8, roughness:.18, metalness:.80}),
+  led:    new THREE.MeshStandardMaterial({color:0x00e5ff, roughness:.05, emissive:new THREE.Color(0x00bcd4), emissiveIntensity:1.0}),
+  ring:   new THREE.MeshStandardMaterial({color:0x2a6b2a, roughness:.4, metalness:.5}),
+  ultra:  new THREE.MeshStandardMaterial({color:0xff9800, roughness:.4, metalness:.3}),
+  ir:     new THREE.MeshStandardMaterial({color:0xab47bc, roughness:.4, emissive:new THREE.Color(0x4a0070), emissiveIntensity:.5}),
+  tip:    new THREE.MeshStandardMaterial({color:0x1a1a1a, roughness:.95}),
+  collar: new THREE.MeshStandardMaterial({color:0x444444, roughness:.4, metalness:.7}),
+  btnM:   new THREE.MeshStandardMaterial({color:0x2a2a2a, roughness:.5, metalness:.4}),
+};
+
+// ── PART INFO ────────────────────────────────────────────────────
+const INFO = {
+  'Ergonomic Handle':   {tag:'GRIP',tc:'#455a64',rows:[['Material','ABS + Rubber'],['Grip Rings','4× rubber'],['Tilt Angle','10° ergonomic'],['Wrist Strap','Included']],desc:'Curved grip with 4 rubber rings reduces wrist strain. Slight 10° tilt angle improves comfort for long navigation.'},
+  'Wrist Strap':        {tag:'SAFETY',tc:'#c62828',rows:[['Type','Nylon loop'],['Purpose','Anti-drop'],['Adjustable','Yes']],desc:'Keeps the stick secured to the wrist, preventing accidental drops on uneven terrain.'},
+  'Control Panel':      {tag:'INTERFACE',tc:'#1565c0',rows:[['Display','LED digital'],['Buttons','3× haptic'],['Feedback','Vibration + Sound'],['Operation','One-handed']],desc:'Simple control panel with haptic feedback buttons. LED screen shows battery level, active mode and sensor status.'},
+  'Battery Module':     {tag:'POWER',tc:'#e65100',rows:[['Capacity','2000 mAh'],['Type','Li-ion rechargeable'],['Charge Time','2.5 hours'],['Runtime','20 hours'],['Port','USB-C']],desc:'2000 mAh Li-ion battery delivers up to 20 hours of operation. USB-C fast charging restores full charge in 2.5 hours.'},
+  'Upper Shaft':        {tag:'STRUCTURE',tc:'#37474f',rows:[['Material','Aluminum Alloy'],['Diameter','15 mm'],['Finish','Anodized matte'],['Weight','~120 g']],desc:'Lightweight aluminum alloy upper body. Anodized matte finish resists scratches, corrosion and daily outdoor wear.'},
+  'LED Strip':          {tag:'VISIBILITY',tc:'#00695c',rows:[['LEDs','5× cyan dots'],['Trigger','Auto + Manual'],['Purpose','Night visibility'],['Range','Visible ~50 m']],desc:'Built-in cyan LEDs light up in low-light environments for visibility and safety during night-time navigation.'},
+  'Adjustment Collar':  {tag:'ADJUSTABLE',tc:'#2e7d32',rows:[['Range','75–110 cm'],['Lock','Twist-lock'],['Steps','Continuous'],['Material','Al + ABS']],desc:'Twist-lock collar allows smooth, stepless height adjustment from 75 to 110 cm to suit any user height.'},
+  'Lower Shaft':        {tag:'STRUCTURE',tc:'#37474f',rows:[['Material','Aluminum Alloy'],['Diameter','12.5 mm'],['Type','Telescopic'],['Finish','Brushed']],desc:'Telescopic brushed aluminum lower shaft slides inside the upper section for full range height adjustment.'},
+  'Sensor Housing':     {tag:'360° SENSOR RING',tc:'#2e7d32',rows:[['Coverage','360°'],['Holds','4× Ultrasonic, 2× IR'],['Material','ABS IP65'],['Position','Near base']],desc:'360° protective ring near the base securely houses all obstacle detection sensors for full surround awareness.'},
+  'Ultrasonic Sensors': {tag:'ULTRASONIC ×4',tc:'#e65100',rows:[['Count','4 sensors'],['Range','Up to 4 meters'],['Frequency','40 kHz'],['Coverage','Full 360°'],['Alert','Vibration + Beep']],desc:'4 ultrasonic sensors detect obstacles up to 4 meters away in all directions and instantly trigger vibration and audio alerts.'},
+  'IR Sensors':         {tag:'INFRARED ×2',tc:'#6a1b9a',rows:[['Count','2 sensors'],['Type','Passive Infrared'],['Range','~1 meter'],['Use','Step & curb detection']],desc:'2 infrared sensors detect close-range obstacles like curbs, steps and low ground hazards that ultrasonic sensors may miss.'},
+  'Anti-Slip Tip':      {tag:'IP65 · RUBBER',tc:'#37474f',rows:[['Material','EPDM Rubber'],['IP Rating','IP65 weatherproof'],['Shape','Tapered + ball end'],['Surface','Anti-slip textured']],desc:'Durable IP65-rated rubber tip with anti-slip texture. Safe and stable contact on wet, uneven or rough outdoor surfaces.'},
+};
+
+// ── PARTS REGISTRY ───────────────────────────────────────────────
+const parts = [], annEls = [];
+const V = (x,y,z) => new THREE.Vector3(x,y,z);
+
+function addPart(mesh, aPos, eVec, key) {
+  mesh.position.copy(aPos);
+  mesh.userData.a   = aPos.clone();
+  mesh.userData.e   = aPos.clone().add(eVec);
+  mesh.userData.key = key;
+  mesh.castShadow = true; mesh.receiveShadow = true;
+  scene.add(mesh); parts.push(mesh);
+
+  const info = INFO[key] || {};
+  const rows = (info.rows||[]).map(r =>
+    `<div class="arow">${r[0]}<span>${r[1]}</span></div>`).join('');
+  const tag = info.tag
+    ? `<div class="atag" style="background:${info.tc||'#1e3c1e'}33;border:1px solid ${info.tc||'#3d7a3d'};color:${info.tc||'#4caf50'}">${info.tag}</div>` : '';
+  const div = document.createElement('div');
+  div.className = 'ann';
+  div.innerHTML = `<div class="abox"><div class="atitle">${key}</div>${rows}${tag}</div>`;
+  document.body.appendChild(div);
+  annEls.push({div, mesh});
+  return mesh;
+}
+
+// ── BUILD GEOMETRY ───────────────────────────────────────────────
+// 1. Handle
+const hG = new THREE.Group();
+hG.add(new THREE.Mesh(new THREE.CylinderGeometry(0.135,0.092,1.55,32), M.handle));
+for(let i=0;i<4;i++){const r=new THREE.Mesh(new THREE.TorusGeometry(0.138,0.013,12,40),M.rubber);r.rotation.x=Math.PI/2;r.position.y=-0.38+i*0.28;hG.add(r);}
+const dome=new THREE.Mesh(new THREE.SphereGeometry(0.135,32,16,0,Math.PI*2,0,Math.PI/2),M.handle);
+dome.position.y=0.775; hG.add(dome); hG.rotation.z=0.18;
+addPart(hG, V(0,4.5,0), V(-4.0,3.0,0), 'Ergonomic Handle');
+
+// 2. Wrist strap
+const ws=new THREE.Mesh(new THREE.TorusGeometry(0.13,0.024,12,32),M.rubber);
+ws.rotation.x=Math.PI/2;
+addPart(ws, V(0,5.18,0), V(-5.0,4.0,0.5), 'Wrist Strap');
+
+// 3. Control panel
+const pG=new THREE.Group();
+pG.add(new THREE.Mesh(new THREE.BoxGeometry(0.24,0.72,0.07),M.panel));
+const dsp=new THREE.Mesh(new THREE.BoxGeometry(0.145,0.20,0.012),M.disp);
+dsp.position.set(0,0.18,0.042); pG.add(dsp);
+for(let i=0;i<3;i++){const b=new THREE.Mesh(new THREE.CylinderGeometry(0.023,0.023,0.026,16),M.btnM);b.rotation.x=Math.PI/2;b.position.set(0,-0.06-i*0.1,0.048);pG.add(b);}
+addPart(pG, V(0.17,3.72,0.08), V(4.0,2.5,1.2), 'Control Panel');
+
+// 4. Battery
+const bG=new THREE.Group();
+bG.add(new THREE.Mesh(new THREE.CylinderGeometry(0.064,0.064,0.95,24),M.batt));
+const bc1=new THREE.Mesh(new THREE.SphereGeometry(0.064,20,10,0,Math.PI*2,0,Math.PI/2),M.batt);bc1.position.y=0.475;bG.add(bc1);
+const bc2=new THREE.Mesh(new THREE.SphereGeometry(0.064,20,10,0,Math.PI*2,Math.PI/2,Math.PI/2),M.batt);bc2.position.y=-0.475;bG.add(bc2);
+addPart(bG, V(0,3.35,0), V(5.0,2.2,0), 'Battery Module');
+
+// 5. Upper shaft
+addPart(new THREE.Mesh(new THREE.CylinderGeometry(0.076,0.068,4.2,32),M.upper), V(0,1.7,0), V(-2.2,0.5,0), 'Upper Shaft');
+
+// 6. LED strip group
+const lG=new THREE.Group();
+for(let i=0;i<5;i++){const l=new THREE.Mesh(new THREE.SphereGeometry(0.033,14,14),M.led);l.position.set(0.086,0.28+i*0.52,0);lG.add(l);}
+addPart(lG, V(0,0,0), V(3.5,1.0,0.8), 'LED Strip');
+
+// 7. Collar
+const cG=new THREE.Group();
+cG.add(new THREE.Mesh(new THREE.CylinderGeometry(0.088,0.088,0.20,32),M.collar));
+const lk=new THREE.Mesh(new THREE.BoxGeometry(0.065,0.082,0.16),M.btnM);lk.position.set(0.11,0,0);cG.add(lk);
+addPart(cG, V(0,-0.25,0), V(-3.2,-1.8,0), 'Adjustment Collar');
+
+// 8. Lower shaft
+addPart(new THREE.Mesh(new THREE.CylinderGeometry(0.063,0.054,3.6,32),M.lower), V(0,-2.2,0), V(2.2,-1.5,0), 'Lower Shaft');
+
+// 9. Sensor housing ring
+const srG=new THREE.Group();
+const sr=new THREE.Mesh(new THREE.TorusGeometry(0.115,0.042,18,48),M.ring);sr.rotation.x=Math.PI/2;srG.add(sr);
+srG.add(new THREE.Mesh(new THREE.CylinderGeometry(0.115,0.115,0.14,32),M.ring));
+addPart(srG, V(0,-3.72,0), V(0,-1.5,0), 'Sensor Housing');
+
+// 10. Ultrasonic x4
+const uG=new THREE.Group();
+for(let i=0;i<4;i++){
+  const a=(Math.PI/2)*i, ug=new THREE.Group();
+  const ub=new THREE.Mesh(new THREE.CylinderGeometry(0.036,0.028,0.076,20),M.ultra);ub.rotation.x=Math.PI/2;ug.add(ub);
+  const ur=new THREE.Mesh(new THREE.TorusGeometry(0.028,0.007,10,24),M.collar);ur.rotation.x=Math.PI/2;ug.add(ur);
+  ug.rotation.y=-a; ug.position.set(Math.cos(a)*0.118,0,Math.sin(a)*0.118); uG.add(ug);
+}
+addPart(uG, V(0,-3.72,0), V(0,-3.5,0), 'Ultrasonic Sensors');
+
+// 11. IR x2
+const iG=new THREE.Group();
+for(let i=0;i<2;i++){
+  const a=Math.PI/4+Math.PI*i;
+  const ib=new THREE.Mesh(new THREE.BoxGeometry(0.05,0.05,0.066),M.ir);
+  ib.rotation.y=a; ib.position.set(Math.cos(a)*0.118,0,Math.sin(a)*0.118); iG.add(ib);
+}
+addPart(iG, V(0,-3.56,0), V(3.5,-3.0,2.5), 'IR Sensors');
+
+// 12. Tip
+const tG=new THREE.Group();
+tG.add(new THREE.Mesh(new THREE.CylinderGeometry(0.054,0.028,0.38,24),M.tip));
+const tb=new THREE.Mesh(new THREE.SphereGeometry(0.052,22,22),M.tip);tb.position.y=-0.22;tG.add(tb);
+addPart(tG, V(0,-4.2,0), V(0,-2.2,0), 'Anti-Slip Tip');
+
+// ── EXPLODE STATE ────────────────────────────────────────────────
+let eT=0, tT=0, anim=false, wire=false;
+function applyT(t){ parts.forEach(p => p.position.lerpVectors(p.userData.a, p.userData.e, t)); }
+
+const statsBar = document.getElementById('statsBar');
+const sidePanel = document.getElementById('panel');
+
+function setActive(id){ document.querySelectorAll('.btn').forEach(b=>b.classList.remove('on')); document.getElementById(id).classList.add('on'); }
+document.getElementById('bA').onclick  = () => { tT=0; anim=true; setActive('bA'); statsBar.classList.remove('show'); sidePanel.classList.remove('show'); };
+document.getElementById('bE').onclick  = () => { tT=1; anim=true; setActive('bE'); };
+document.getElementById('bAn').onclick = () => { tT=eT<.5?1:0; anim=true; setActive('bAn'); };
+document.getElementById('bW').onclick  = () => { wire=!wire; Object.values(M).forEach(m=>m.wireframe=wire); document.getElementById('bW').textContent=wire?'■ Solid':'◻ Wireframe'; };
+
+// ── ANNOTATIONS + LEADER LINES ───────────────────────────────────
+const _box = new THREE.Box3(), _cen = new THREE.Vector3();
+function worldCenter(p){ _box.setFromObject(p); _box.getCenter(_cen); return _cen.clone(); }
+function toScreen(v){ const c=v.clone().project(camera); return {x:(c.x+1)/2*innerWidth, y:(1-c.y)/2*innerHeight}; }
+
+function updateAnns(t){
+  ctx.clearRect(0,0,ov.width,ov.height);
+  const alpha = Math.max(0, Math.min(1, (t-0.55)/0.35));
+  annEls.forEach(({div, mesh}) => {
+    div.style.opacity = alpha;
+    if(alpha < 0.02){ div.classList.remove('show'); return; }
+    div.classList.add('show');
+    const sc = toScreen(worldCenter(mesh));
+    div.style.left = sc.x + 'px';
+    div.style.top  = (sc.y - 12) + 'px';
+    // dot
+    ctx.save();
+    ctx.globalAlpha = alpha * 0.85;
+    ctx.beginPath(); ctx.arc(sc.x, sc.y, 3.5, 0, Math.PI*2);
+    ctx.fillStyle = '#4caf50'; ctx.fill();
+    // dashed line
+    ctx.beginPath(); ctx.moveTo(sc.x, sc.y-4); ctx.lineTo(sc.x, sc.y-12);
+    ctx.strokeStyle = '#4caf50'; ctx.lineWidth = 1; ctx.setLineDash([3,3]); ctx.stroke();
+    ctx.setLineDash([]); ctx.restore();
+  });
+}
+
+// ── CLICK → DETAIL PANEL ────────────────────────────────────────
+const ray=new THREE.Raycaster(), mp=new THREE.Vector2();
+const allM=[]; parts.forEach(p=>p.traverse(c=>{if(c.isMesh)allM.push(c);}));
+function getKey(obj){ let c=obj; while(c){if(c.userData&&c.userData.key)return c.userData.key; c=c.parent;} return null; }
+
+c3d.addEventListener('click', e => {
+  if(eT < 0.4) return;
+  mp.x=(e.clientX/innerWidth)*2-1; mp.y=-(e.clientY/innerHeight)*2+1;
+  ray.setFromCamera(mp, camera);
+  const hits = ray.intersectObjects(allM, false);
+  if(!hits.length) return;
+  const key = getKey(hits[0].object); if(!key) return;
+  const info = INFO[key]; if(!info) return;
+  document.getElementById('ptitle').textContent = key;
+  document.getElementById('prows').innerHTML = (info.rows||[]).map(r=>`<div class="dr"><span class="dk">${r[0]}</span><span class="dv">${r[1]}</span></div>`).join('');
+  document.getElementById('pdesc').textContent = info.desc || '';
+  sidePanel.classList.add('show');
+});
+
+// ── HOVER TIP ────────────────────────────────────────────────────
+const htip = document.getElementById('htip');
+c3d.addEventListener('mousemove', e => {
+  mp.x=(e.clientX/innerWidth)*2-1; mp.y=-(e.clientY/innerHeight)*2+1;
+  ray.setFromCamera(mp, camera);
+  const hits = ray.intersectObjects(allM, false);
+  if(hits.length){ const k=getKey(hits[0].object); if(k){ htip.style.display='block'; htip.style.left=(e.clientX+14)+'px'; htip.style.top=(e.clientY-10)+'px'; htip.textContent=k; return; } }
+  htip.style.display='none';
+});
+
+// ── RENDER LOOP ──────────────────────────────────────────────────
+const clock = new THREE.Clock();
+(function loop(){
+  requestAnimationFrame(loop);
+  controls.update();
+  const dt = Math.min(clock.getDelta(), 0.05);
+  if(anim){
+    eT += (tT - eT) * dt * 18;
+    if(Math.abs(eT-tT) < 0.002){
+      eT = tT; anim = false;
+      if(eT === 1) statsBar.classList.add('show');
+      if(eT === 0){ statsBar.classList.remove('show'); sidePanel.classList.remove('show'); }
+    }
+    applyT(eT);
+  }
+  updateAnns(eT);
+  const p = 0.5 + 0.5*Math.sin(Date.now()*0.003);
+  M.led.emissiveIntensity  = 0.7 + 0.3*p;
+  M.disp.emissiveIntensity = 0.4 + 0.2*p;
+  M.ir.emissiveIntensity   = 0.3 + 0.2*p;
+  fill.intensity = 0.5 + 0.3*p;
+  renderer.render(scene, camera);
+})();
+</script>
+</body>
+</html>
