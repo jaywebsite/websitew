@@ -380,6 +380,7 @@ footer .red { -webkit-text-fill-color:var(--primary); color:var(--primary); }
 ═══════════════════════════════════════ */
 #music-overlay {
   position: fixed; inset: 0; z-index: 9999;
+  display: flex; align-items: center; justify-content: center;
   overflow: hidden;
   transition: opacity .8s ease;
   font-family: 'Inter', 'Poppins', sans-serif;

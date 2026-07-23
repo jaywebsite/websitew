@@ -103,23 +103,23 @@ const bgMusic = document.getElementById('bg-music');
 
 function overlayPlay() {
   const overlay = document.getElementById('music-overlay');
-  const vinyl   = document.getElementById('overlay-vinyl');
 
   if (!bgMusic) return;
   bgMusic.volume = 1.0;
   bgMusic.play().then(() => {
     musicPlaying = true;
-    if (vinyl) vinyl.style.animationPlayState = 'running';
     overlay.classList.add('hide');
     setTimeout(() => {
       overlay.style.display = 'none';
-      // Push polaroids back behind content
       const pb = document.querySelector('.polaroid-bg');
       if (pb) pb.style.zIndex = '-1';
     }, 800);
     document.getElementById('music-btn').classList.add('playing');
-    document.getElementById('music-label').textContent = '♪ wave to earth - love';
-  }).catch(() => {});
+    document.getElementById('music-label').textContent = '♪ bye (slowed)';
+  }).catch(() => {
+    overlay.classList.add('hide');
+    setTimeout(() => overlay.style.display = 'none', 800);
+  });
 }
 
 function toggleMusic() {
