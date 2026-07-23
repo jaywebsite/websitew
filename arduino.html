@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Arduino UNO – LCD Kalapastangan</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #dde1e7;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Courier New', monospace;
+      padding: 40px 20px;
+    }
+    .scene {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      flex-wrap: nowrap;
+      justify-content: center;
+    }
+
+    /* ═══════════════════════════════════════
+       USB CABLE (grey flat cable + white plug)
+    ═══════════════════════════════════════ */
+    .usb-wrap {
+      display: flex;
+      align-items: center;
+      margin-right: -2px;
+      z-index: 10;
+    }
+    .usb-cable-wire {
+      width: 80px;
+      height: 8px;
+      background: #b0b4bb;
+      border-radius: 4px 0 0 4px;
+    }
+    .usb-plug-body {
+      width: 48px;
+      height: 36px;
+      background: #d8d8d8;
+      border-radius: 5px;
+      position: relative;
+      box-shadow: 2px 2px 8px rgba(0,0,0,0.35);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .usb-plug-inner {
+      width: 28px;
+      height: 18px;
+      background: #aaa;
+      border-radius: 3px;
+    }
+
+    /* ═══════════════════════════════════════
+       ARDUINO BOARD (SVG-based for accuracy)
+    ═══════════════════════════════════════ */
+    .arduino-wrap {
+      position: relative;
+      width: 360px;
+      height: 280px;
+      flex-shrink: 0;
+    }
+    .arduino-svg {
+      width: 100%;
+      height: 100%;
+      overflow: visible;
+    }
+
+    /* LED animations */
+    @keyframes blinkGreen { 0%,100%{opacity:1} 50%{opacity:.3} }
+    @keyframes blinkAmber { 0%,100%{opacity:1} 50%{opacity:.15} }
+    .led-on-dot  { animation: blinkGreen 1.4s ease-in-out infinite; }
+    .led-rx-dot  { animation: blinkAmber 0.5s ease-in-out infinite alternate; }
+    .led-tx-dot  { animation: blinkAmber 0.5s 0.25s ease-in-out infinite alternate; }
+
+    /* ═══════════════════════════════════════
+       WIRES SVG between board and LCD
+    ═══════════════════════════════════════ */
+    .wires-wrap {
+      width: 60px;
+      height: 280px;
+      position: relative;
+      flex-shrink: 0;
+    }
+    .wires-wrap svg { overflow: visible; }
+
+    /* ═══════════════════════════════════════
+       LCD MODULE
+    ═══════════════════════════════════════ */
+    .lcd-module {
+      background: #2a7a2e;
+      border-radius: 7px;
+      padding: 12px 14px 14px;
+      box-shadow: 0 8px 28px rgba(0,0,0,0.55);
+      border: 2px solid #1a5c1d;
+      flex-shrink: 0;
+    }
+    .lcd-pin-strip { display: flex; gap: 3.5px; margin-bottom: 8px; }
+    .lcd-pin-strip span {
+      width: 5px; height: 10px;
+      background: #d4c870;
+      border-radius: 1px 1px 0 0;
+    }
+    .lcd-screen {
+      background: #0b2a50;
+      border-radius: 3px;
+      padding: 8px 10px 10px;
+      border: 2px solid #061828;
+      position: relative;
+    }
+    .lcd-screen::after {
+      content: '';
+      position: absolute; inset: 0;
+      background: repeating-linear-gradient(
+        to bottom,
+        transparent 0, transparent 3px,
+        rgba(0,0,0,0.09) 3px, rgba(0,0,0,0.09) 4px
+      );
+      pointer-events: none; border-radius: 3px; z-index: 3;
+    }
+    .lcd-row { display: flex; height: 20px; align-items: center; margin-bottom: 3px; }
+    .lcd-row:last-child { margin-bottom: 0; }
+    .lcd-cell {
+      width: 9px; height: 15px; margin-right: 1px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 9.5px; color: #9dd5f5;
+      text-shadow: 0 0 7px #7bbfe8, 0 0 12px #4aacdd;
+      font-family: 'Courier New', monospace; font-weight: bold;
+      position: relative; user-select: none;
+    }
+    .lcd-cell.cursor::after {
+      content: ''; position: absolute;
+      bottom: 0; left: 0; right: 0; height: 2px;
+      background: #9dd5f5;
+      animation: cur 0.8s step-end infinite;
+      box-shadow: 0 0 5px #9dd5f5;
+    }
+    @keyframes cur { 0%,100%{opacity:1} 50%{opacity:0} }
+    .lcd-pcb-label {
+      font-size: 5.5px; color: #88cc88;
+      text-align: right; margin-top: 5px;
+      letter-spacing: 1.5px; opacity: .65;
+    }
+
+    /* ═══════════════════════════════════════
+       CONTROLS
+    ═══════════════════════════════════════ */
+    .controls {
+      margin-top: 28px;
+      display: flex; gap: 14px; align-items: center;
+      flex-wrap: wrap; justify-content: center;
+    }
+    .btn {
+      padding: 9px 22px; border: none; border-radius: 5px;
+      cursor: pointer; font-family: 'Courier New', monospace;
+      font-size: 13px; font-weight: bold;
+      transition: filter .15s, transform .1s;
+    }
+    .btn:active { transform: scale(0.96); }
+    .btn-run  { background: #00c853; color: #fff; }
+    .btn-stop { background: #d32f2f; color: #fff; }
+    .btn-run:hover  { filter: brightness(1.15); }
+    .btn-stop:hover { filter: brightness(1.15); }
+    .speed-lbl { font-size: 12px; color: #555; }
+    .speed-sel {
+      padding: 7px 10px; border-radius: 4px; border: 1px solid #bbb;
+      font-family: 'Courier New', monospace; font-size: 12px;
+      background: #fff; cursor: pointer;
+    }
+    .footer { margin-top: 14px; font-size: 11px; color: #888; text-align: center; }
+    .footer b { color: #1b6db5; }
+  </style>
+</head>
+<body>
+<div class="scene">
+
+  <!-- USB Cable -->
+  <div class="usb-wrap">
+    <div class="usb-cable-wire"></div>
+    <div class="usb-plug-body"><div class="usb-plug-inner"></div></div>
+  </div>
+
+  <!-- Arduino UNO (SVG) -->
+  <div class="arduino-wrap">
+   <svg class="arduino-svg" viewBox="0 0 360 280" xmlns="http://www.w3.org/2000/svg">
+    <!-- ── Board body ── -->
+    <rect x="30" y="10" width="310" height="258" rx="14" ry="14"
+          fill="#1e6db5" stroke="#0d4a8a" stroke-width="2.5"/>
+
+    <!-- ── Top digital pin headers (two rows) ── -->
+    <!-- Row 1: pins 0-13 area -->
+    <g fill="#c8b84a">
+      <!-- black socket strip -->
+      <rect x="82" y="10" width="178" height="11" rx="2" fill="#222"/>
+      <!-- gold pins -->
+      <rect x="86"  y="4"  width="6" height="8" rx="1"/>
+      <rect x="96"  y="4"  width="6" height="8" rx="1"/>
+      <rect x="106" y="4"  width="6" height="8" rx="1"/>
+      <rect x="116" y="4"  width="6" height="8" rx="1"/>
+      <rect x="126" y="4"  width="6" height="8" rx="1"/>
+      <rect x="136" y="4"  width="6" height="8" rx="1"/>
+      <rect x="146" y="4"  width="6" height="8" rx="1"/>
+      <rect x="156" y="4"  width="6" height="8" rx="1"/>
+      <rect x="166" y="4"  width="6" height="8" rx="1"/>
+      <rect x="176" y="4"  width="6" height="8" rx="1"/>
+      <rect x="186" y="4"  width="6" height="8" rx="1"/>
+      <rect x="196" y="4"  width="6" height="8" rx="1"/>
+      <rect x="206" y="4"  width="6" height="8" rx="1"/>
+      <rect x="216" y="4"  width="6" height="8" rx="1"/>
+      <rect x="226" y="4"  width="6" height="8" rx="1"/>
+      <rect x="236" y="4"  width="6" height="8" rx="1"/>
+      <rect x="246" y="4"  width="6" height="8" rx="1"/>
+      <rect x="256" y="4"  width="6" height="8" rx="1"/>
+    </g>
+    <!-- "DIGITAL (PWM~)" label -->
+    <text x="170" y="27" fill="#a8cfea" font-size="6.5"
+          font-family="Courier New" letter-spacing="1.5" text-anchor="middle">DIGITAL (PWM~)</text>
+    <!-- vertical pin number labels -->
+    <g fill="#a8cfea" font-size="5" font-family="Courier New" text-anchor="middle">
+      <text x="89"  y="37" transform="rotate(-90,89,37)">AREF</text>
+      <text x="99"  y="37" transform="rotate(-90,99,37)">GND</text>
+      <text x="109" y="37" transform="rotate(-90,109,37)">13</text>
+      <text x="119" y="37" transform="rotate(-90,119,37)">12</text>
+      <text x="129" y="37" transform="rotate(-90,129,37)">~11</text>
+      <text x="139" y="37" transform="rotate(-90,139,37)">~10</text>
+      <text x="149" y="37" transform="rotate(-90,149,37)">~9</text>
+      <text x="159" y="37" transform="rotate(-90,159,37)">8</text>
+      <text x="175" y="37" transform="rotate(-90,175,37)">7</text>
+      <text x="185" y="37" transform="rotate(-90,185,37)">~6</text>
+      <text x="195" y="37" transform="rotate(-90,195,37)">~5</text>
+      <text x="205" y="37" transform="rotate(-90,205,37)">4</text>
+      <text x="215" y="37" transform="rotate(-90,215,37)">~3</text>
+      <text x="225" y="37" transform="rotate(-90,225,37)">2</text>
+      <text x="235" y="37" transform="rotate(-90,235,37)">TX1</text>
+      <text x="245" y="37" transform="rotate(-90,245,37)">RX0</text>
+    </g>
+
+    <!-- ── Bottom analog pin header ── -->
+    <rect x="100" y="262" width="130" height="11" rx="2" fill="#222"/>
+    <g fill="#c8b84a">
+      <rect x="104" y="268" width="6" height="8" rx="1"/>
+      <rect x="114" y="268" width="6" height="8" rx="1"/>
+      <rect x="124" y="268" width="6" height="8" rx="1"/>
+      <rect x="134" y="268" width="6" height="8" rx="1"/>
+      <rect x="144" y="268" width="6" height="8" rx="1"/>
+      <rect x="154" y="268" width="6" height="8" rx="1"/>
+      <rect x="164" y="268" width="6" height="8" rx="1"/>
+      <rect x="174" y="268" width="6" height="8" rx="1"/>
+      <rect x="184" y="268" width="6" height="8" rx="1"/>
+      <rect x="194" y="268" width="6" height="8" rx="1"/>
+      <rect x="204" y="268" width="6" height="8" rx="1"/>
+      <rect x="214" y="268" width="6" height="8" rx="1"/>
+      <rect x="224" y="268" width="6" height="8" rx="1"/>
+    </g>
+    <!-- POWER / ANALOG labels -->
+    <text x="130" y="262" fill="#a8cfea" font-size="5.5"
+          font-family="Courier New" letter-spacing="1">POWER</text>
+    <text x="185" y="262" fill="#a8cfea" font-size="5.5"
+          font-family="Courier New" letter-spacing="1">ANALOG IN</text>
+
+    <!-- ── USB-B port (left side, top) ── -->
+    <rect x="10" y="28" width="24" height="32" rx="3" fill="#333" stroke="#222" stroke-width="1.5"/>
+    <rect x="14" y="33" width="16" height="22" rx="2" fill="#666"/>
+    <rect x="16" y="36" width="12" height="16" rx="1" fill="#444"/>
+
+    <!-- ── Power jack (left side, below USB-B) ── -->
+    <rect x="8" y="72" width="26" height="22" rx="4" fill="#222" stroke="#111" stroke-width="1.5"/>
+    <circle cx="21" cy="83" r="7" fill="#111" stroke="#333" stroke-width="1"/>
+    <circle cx="21" cy="83" r="3.5" fill="#1a1a1a"/>
+
+    <!-- ── Red reset button (top-left area) ── -->
+    <rect x="35" y="22" width="24" height="22" rx="3" fill="#555" stroke="#333" stroke-width="1"/>
+    <circle cx="47" cy="33" r="8" fill="#c0392b" stroke="#8b0000" stroke-width="1.5"/>
+    <circle cx="45" cy="31" r="2" fill="#e85050" opacity=".6"/>
+
+    <!-- ── White programming button (middle-left) ── -->
+    <rect x="35" y="120" width="28" height="22" rx="3" fill="#444" stroke="#333" stroke-width="1"/>
+    <rect x="39" y="124" width="20" height="14" rx="2" fill="#e8e8e8"/>
+
+    <!-- ── Arduino ∞ Logo + Text ── -->
+    <!-- ∞ symbol (two overlapping circles outline) -->
+    <circle cx="162" cy="78" r="12" fill="none" stroke="#a8d8f0" stroke-width="3"/>
+    <circle cx="186" cy="78" r="12" fill="none" stroke="#a8d8f0" stroke-width="3"/>
+    <!-- cover center overlap -->
+    <rect x="169" y="67" width="18" height="22" fill="#1e6db5"/>
+    <text x="174" y="82" fill="#a8d8f0" font-size="13" font-family="Courier New"
+          font-weight="bold">∞</text>
+    <!-- UNO box outline -->
+    <rect x="220" y="64" width="54" height="28" rx="4" fill="none" stroke="#a8d8f0" stroke-width="2"/>
+    <text x="247" y="83" fill="#a8d8f0" font-size="18" font-family="Courier New"
+          font-weight="bold" text-anchor="middle" letter-spacing="3">UNO</text>
+    <!-- ARDUINO text -->
+    <text x="174" y="98" fill="#a8d8f0" font-size="9" font-family="Courier New"
+          letter-spacing="4" text-anchor="middle">ARDUINO</text>
+    <!-- ON indicator -->
+    <text x="286" y="72" fill="#a8d8f0" font-size="6" font-family="Courier New"
+          letter-spacing="1">ON</text>
+
+    <!-- ── TX/RX labels ── -->
+    <text x="52" y="100" fill="#a8d8f0" font-size="6" font-family="Courier New">TX</text>
+    <text x="52" y="112" fill="#a8d8f0" font-size="6" font-family="Courier New">RX</text>
+    <!-- TX/RX rectangles (indicator blocks) -->
+    <rect x="62" y="94"  width="14" height="6" rx="1" fill="#444"/>
+    <rect x="62" y="106" width="14" height="6" rx="1" fill="#444"/>
+
+    <!-- ── L LED label ── -->
+    <text x="52" y="125" fill="#a8d8f0" font-size="6" font-family="Courier New">L</text>
+
+    <!-- ── LED dots (vertical column) ── -->
+    <!-- ON (green) -->
+    <circle cx="295" cy="72" r="5" fill="#1a1a1a" stroke="#333" stroke-width="1"/>
+    <circle cx="295" cy="72" r="3.5" fill="#00e676" class="led-on-dot"
+            filter="url(#glow-green)"/>
+    <!-- L (yellow, toggled by JS) -->
+    <circle cx="295" cy="88" r="5" fill="#1a1a1a" stroke="#333" stroke-width="1"/>
+    <circle cx="295" cy="88" r="3.5" fill="#f44336" id="ledLdot"/>
+    <!-- RX (amber) -->
+    <circle cx="79" cy="100" r="4" fill="#1a1a1a" stroke="#333" stroke-width="1"/>
+    <circle cx="79" cy="100" r="2.8" fill="#ff9800" class="led-rx-dot"
+            filter="url(#glow-amber)"/>
+    <!-- TX (amber) -->
+    <circle cx="79" cy="112" r="4" fill="#1a1a1a" stroke="#333" stroke-width="1"/>
+    <circle cx="79" cy="112" r="2.8" fill="#ff9800" class="led-tx-dot"
+            filter="url(#glow-amber)"/>
+
+    <!-- ── Main IC chip (ATmega328) ── -->
+    <rect x="150" y="158" width="100" height="68" rx="5" fill="#111" stroke="#444" stroke-width="1.5"/>
+    <!-- IC notch -->
+    <path d="M195,158 Q200,153 205,158" fill="#111" stroke="#444" stroke-width="1.5"/>
+    <!-- IC left pins -->
+    <g fill="#888">
+      <rect x="140" y="165" width="10" height="4" rx="1"/>
+      <rect x="140" y="173" width="10" height="4" rx="1"/>
+      <rect x="140" y="181" width="10" height="4" rx="1"/>
+      <rect x="140" y="189" width="10" height="4" rx="1"/>
+      <rect x="140" y="197" width="10" height="4" rx="1"/>
+      <rect x="140" y="205" width="10" height="4" rx="1"/>
+      <rect x="140" y="213" width="10" height="4" rx="1"/>
+    </g>
+    <!-- IC right pins -->
+    <g fill="#888">
+      <rect x="250" y="165" width="10" height="4" rx="1"/>
+      <rect x="250" y="173" width="10" height="4" rx="1"/>
+      <rect x="250" y="181" width="10" height="4" rx="1"/>
+      <rect x="250" y="189" width="10" height="4" rx="1"/>
+      <rect x="250" y="197" width="10" height="4" rx="1"/>
+      <rect x="250" y="205" width="10" height="4" rx="1"/>
+      <rect x="250" y="213" width="10" height="4" rx="1"/>
+    </g>
+
+    <!-- ── Small IC (crystal oscillator area) ── -->
+    <rect x="75" y="148" width="32" height="22" rx="3" fill="#222" stroke="#444" stroke-width="1"/>
+    <rect x="78" y="152" width="26" height="14" rx="2" fill="#1a1a1a"/>
+
+    <!-- ── Small square component ── -->
+    <rect x="75" y="178" width="18" height="18" rx="2" fill="#222" stroke="#444" stroke-width="1"/>
+
+    <!-- ── Capacitors / circles (bottom left) ── -->
+    <circle cx="55"  cy="232" r="9"  fill="radial-gradient(#ddd,#666)" stroke="#555" stroke-width="1.5"/>
+    <circle cx="55"  cy="232" r="9"  fill="#888" stroke="#555" stroke-width="1.5"/>
+    <circle cx="55"  cy="232" r="4"  fill="#555"/>
+    <circle cx="80"  cy="240" r="11" fill="#999" stroke="#555" stroke-width="1.5"/>
+    <circle cx="80"  cy="240" r="5"  fill="#666"/>
+    <circle cx="108" cy="240" r="11" fill="#999" stroke="#555" stroke-width="1.5"/>
+    <circle cx="108" cy="240" r="5"  fill="#666"/>
+
+    <!-- ── Corner mounting holes ── -->
+    <circle cx="50"  cy="260" r="5" fill="#0d4a8a" stroke="#0a3a70" stroke-width="1"/>
+    <circle cx="50"  cy="260" r="2.5" fill="#ccc" opacity=".4"/>
+    <circle cx="330" cy="260" r="5" fill="#0d4a8a" stroke="#0a3a70" stroke-width="1"/>
+    <circle cx="330" cy="260" r="2.5" fill="#ccc" opacity=".4"/>
+    <circle cx="330" cy="28"  r="5" fill="#0d4a8a" stroke="#0a3a70" stroke-width="1"/>
+    <circle cx="330" cy="28"  r="2.5" fill="#ccc" opacity=".4"/>
+
+    <!-- ── Wires from right edge of board to LCD ── -->
+    <!-- Red wire -->
+    <line x1="340" y1="90" x2="380" y2="82" stroke="#e53935" stroke-width="3" stroke-linecap="round"/>
+    <!-- Black wire -->
+    <line x1="340" y1="102" x2="380" y2="95" stroke="#222" stroke-width="3" stroke-linecap="round"/>
+    <!-- Green wire -->
+    <line x1="340" y1="115" x2="380" y2="110" stroke="#43a047" stroke-width="3" stroke-linecap="round"/>
+    <!-- Green wire 2 -->
+    <line x1="340" y1="128" x2="380" y2="124" stroke="#43a047" stroke-width="3" stroke-linecap="round"/>
+
+    <!-- ── SVG filters for glow ── -->
+    <defs>
+      <filter id="glow-green" x="-80%" y="-80%" width="260%" height="260%">
+        <feGaussianBlur stdDeviation="3" result="blur"/>
+        <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
+      <filter id="glow-amber" x="-80%" y="-80%" width="260%" height="260%">
+        <feGaussianBlur stdDeviation="2.5" result="blur"/>
+        <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
+    </defs>
+   </svg>
+  </div><!-- /arduino-wrap -->
+
+  <!-- LCD 20×4 Module -->
+  <div class="lcd-module">
+    <div class="lcd-pin-strip">
+      <span></span><span></span><span></span><span></span>
+      <span></span><span></span><span></span><span></span>
+      <span></span><span></span><span></span><span></span>
+      <span></span><span></span><span></span><span></span>
+    </div>
+    <div class="lcd-screen">
+      <div class="lcd-row" id="row0"></div>
+      <div class="lcd-row" id="row1"></div>
+      <div class="lcd-row" id="row2"></div>
+      <div class="lcd-row" id="row3"></div>
+    </div>
+    <div class="lcd-pcb-label">GND &nbsp; VCC &nbsp; SDA &nbsp; SCL</div>
+  </div>
+
+</div><!-- /scene -->
+
+<!-- Controls -->
+<div class="controls">
+  <button class="btn btn-run"  id="btnRun">▶ Run</button>
+  <button class="btn btn-stop" id="btnStop">■ Stop</button>
+  <span class="speed-lbl">Speed:</span>
+  <select class="speed-sel" id="speedSel">
+    <option value="320">Slow</option>
+    <option value="150" selected>Normal</option>
+    <option value="55">Fast</option>
+  </select>
+</div>
+
+<div class="footer">
+  Simulating <b>Arduino UNO</b> + <b>20×4 I²C LCD</b> —
+  scrolling <b>Kalapastangan</b> by <b>fitterkarma</b>
+</div>
+
+<script>
+const LYRICS = [
+  "Mamamatay akong","nakangiti",
+  "Kapag ikaw ang","nasa aking tabi","",
+  "Mabubuhay akong","nagsisisi",
+  "Kapag isang araw","hindi kita","mapangiti","",
+  "Kalapastangan ang","'di ka ibigin",
+  "Kalokohan ang","'di ka isipin","",
+  "Kung ang mundo ay","biglang gugunawin",
+  "Ikaw ang una kong","hahanapin","",
+  "~~~~~~~~~~~~~~~~"," END OF SONG :) ","~~~~~~~~~~~~~~~~","","",
+];
+
+const COLS=20,ROWS=4;
+const grid=[];
+for(let r=0;r<ROWS;r++){
+  const rowEl=document.getElementById('row'+r);
+  const cells=[];
+  for(let c=0;c<COLS;c++){
+    const d=document.createElement('div');
+    d.className='lcd-cell';d.textContent='\u00A0';
+    rowEl.appendChild(d);cells.push(d);
+  }
+  grid.push(cells);
+}
+function clearGrid(){
+  for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++){
+    grid[r][c].textContent='\u00A0';grid[r][c].classList.remove('cursor');
+  }
+}
+let buf=['','','',''];
+function renderBuf(){
+  for(let r=0;r<ROWS;r++){
+    const line=buf[r].padEnd(COLS,' ').substring(0,COLS);
+    for(let c=0;c<COLS;c++)
+      grid[r][c].textContent=line[c]===' '?'\u00A0':line[c];
+  }
+}
+function centre(s){
+  s=s.substring(0,COLS);
+  const pad=Math.floor((COLS-s.length)/2);
+  return ' '.repeat(pad)+s;
+}
+let timer=null,running=false,lyricsIdx=0,charIdx=0,screenRow=0,curR=0,curC=0;
+function showCursor(){
+  for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++)grid[r][c].classList.remove('cursor');
+  if(curR>=0&&curR<ROWS&&curC>=0&&curC<COLS)grid[curR][curC].classList.add('cursor');
+}
+function scrollUp(){
+  buf[0]=buf[1];buf[1]=buf[2];buf[2]=buf[3];buf[3]='';
+  renderBuf();if(screenRow>0)screenRow--;
+}
+function getSpeed(){return parseInt(document.getElementById('speedSel').value);}
+function resetState(){
+  clearInterval(timer);timer=null;running=false;
+  lyricsIdx=charIdx=screenRow=0;buf=['','','',''];clearGrid();
+}
+function tick(){
+  if(lyricsIdx>=LYRICS.length){
+    clearInterval(timer);timer=null;running=false;setLedL(false);
+    setTimeout(()=>{resetState();showIdle();},2500);return;
+  }
+  const line=centre(LYRICS[lyricsIdx]);
+  if(charIdx<line.length){
+    if(screenRow>=ROWS){scrollUp();screenRow=ROWS-1;}
+    buf[screenRow]=buf[screenRow].substring(0,charIdx)+line[charIdx];
+    const ch=line[charIdx];
+    grid[screenRow][charIdx].textContent=ch===' '?'\u00A0':ch;
+    curR=screenRow;curC=charIdx+1;showCursor();charIdx++;
+  }else{
+    buf[screenRow]=line;renderBuf();
+    for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++)grid[r][c].classList.remove('cursor');
+    screenRow++;
+    if(screenRow>=ROWS){scrollUp();screenRow=ROWS-1;}
+    charIdx=0;lyricsIdx++;
+  }
+}
+function startTyping(){running=true;setLedL(true);timer=setInterval(tick,getSpeed());}
+function setLedL(on){
+  const el=document.getElementById('ledLdot');
+  if(on){el.setAttribute('fill','#ffee58');el.setAttribute('filter','url(#glow-green)');}
+  else{el.setAttribute('fill','#f44336');el.removeAttribute('filter');}
+}
+function showIdle(){
+  buf=[centre('KALAPASTANGAN'),centre('- fitterkarma -'),centre('Press  Run'),centre('to  begin...')];
+  renderBuf();
+}
+document.getElementById('btnRun').addEventListener('click',()=>{if(running)return;resetState();startTyping();});
+document.getElementById('btnStop').addEventListener('click',()=>{clearInterval(timer);timer=null;running=false;setLedL(false);});
+document.getElementById('speedSel').addEventListener('change',()=>{if(running){clearInterval(timer);timer=setInterval(tick,getSpeed());}});
+window.addEventListener('load',showIdle);
+</script>
+</body>
+</html>
